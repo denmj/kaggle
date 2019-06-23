@@ -6,14 +6,11 @@ import random as rnd
 import seaborn as sns
 import matplotlib.pyplot as plt
 # machine learning
+from sklearn.metrics import mean_squared_log_error
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC, LinearSVC
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import Perceptron
-from sklearn.linear_model import SGDClassifier
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
 
 pd.set_option('display.max_rows', 1460)
 pd.set_option('display.max_columns', 8)
@@ -21,9 +18,6 @@ pd.set_option('display.width', 100)
 
 train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
-
-train_df = train_df.drop(['Id'], axis=1)
-test_df = test_df.drop(['Id'], axis=1)
 
 both_data = [train_df, test_df]
 
@@ -33,7 +27,7 @@ both_data = [train_df, test_df]
 # Quick overlook on data
 # print(train_df.info())
 
-print(train_df.info())
+# print(train_df.info())
 # print('_'*40)
 # print(train_df.describe(include='all'))
 # print('_'*40)
@@ -49,11 +43,8 @@ print(train_df.info())
 # sale_price_df = pd.DataFrame({'SalesP Hist': train_df.SalePrice, 'SaleP LogHist': np.log(train_df.SalePrice)})
 # sale_price_df.hist(histtype='bar', grid=False, bins=25)
 # plt.show()
-
 # Checking MSSubClass - Categorical,
 # Distribution - '20' - 36% , '60' - 20% , '50' - 9% , '120' - 5% rest is less than 5%
-#
-
 #
 # print(train_df['MSSubClass'].value_counts(normalize=True))
 # sns.countplot(x='MSSubClass', data=train_df, color='blue')
@@ -67,276 +58,359 @@ print(train_df.info())
 # sns.countplot(x='MSZoning', data=train_df, color='blue')
 # plt.show()
 
-# MSZoning
+zoning_mapping = {"Commercial": 0, "Residential": 1}
+lot_shape_mapping = {"Irregular": 0, "Reg": 1}
+land_cnt_mapping = {"Rest": 0, "Lvl": 1}
+lot_cnfg_mapping = {"FR2-3": 0, "CulDSac": 1, "Corner": 2, "Inside": 3}
+land_slope_mapping = {"AbnormalSlope": 0, "NormalSlope": 1}
+cond1_mapping = {"Norm": 2, "Bad": 1, "Good": 3}
+cond2_mapping = {"Norm": 2, "Bad": 1, "Good": 3}
+
 for dataset in both_data:
+    dataset.drop(['Id', 'Street', 'Alley', 'Utilities',
+                  'BldgType','HouseStyle', 'RoofMatl',
+                  'PoolQC', 'Fence', 'MiscFeature',
+                  'BsmtExposure', 'BsmtFinType1','BsmtFinSF1',
+                  'BsmtFinType2','BsmtFinSF2', 'BsmtUnfSF',
+                  'Heating', 'Electrical','1stFlrSF','2ndFlrSF',
+                  'LowQualFinSF', 'GarageFinish','PavedDrive',
+                  '3SsnPorch','ScreenPorch', 'PoolArea'], axis=1, inplace=True)
+
     dataset['MSZoning'] = dataset['MSZoning'].replace(['RL', 'RM', 'FV', 'RH'], 'Residential')
     dataset['MSZoning'] = dataset['MSZoning'].replace(['C (all)'], 'Commercial')
 
-zoning_mapping = {"Commercial": 0, "Residential": 1}
-for dataset in both_data:
+
+    dataset['LotShape'] = dataset['LotShape'].replace(['IR1', 'IR2', 'IR3'], 'Irregular')
+    dataset['LandContour'] = dataset['LandContour'].replace(['Bnk', 'HLS', 'Low'], 'Rest')
+    dataset['LotConfig'] = dataset['LotConfig'].replace(['FR2', 'FR3'], 'FR2-3')
+    dataset['LandSlope'] = dataset['LandSlope'].replace(['Gtl'], 'NormalSlope')
+    dataset['LandSlope'] = dataset['LandSlope'].replace(['Mod', 'Sev'], 'AbnormalSlope')
+    dataset['Condition1'] = dataset['Condition1'].replace(['Artery', 'Feedr', 'RRAe', 'RRAn', 'RRNn'], 'Bad')
+    dataset['Condition1'] = dataset['Condition1'].replace(['PosA', 'PosN'], 'Good')
+    dataset['Condition2'] = dataset['Condition2'].replace(['Artery', 'Feedr', 'RRAe', 'RRAn', 'RRNn'], 'Bad')
+    dataset['Condition2'] = dataset['Condition2'].replace(['PosA', 'PosN'], 'Good')
+
+    dataset['LotShape'] = dataset['LotShape'].map(lot_shape_mapping)
     dataset['MSZoning'] = dataset['MSZoning'].map(zoning_mapping)
+    dataset['LandContour'] = dataset['LandContour'].map(land_cnt_mapping)
+    dataset['LotConfig'] = dataset['LotConfig'].map(lot_cnfg_mapping)
+    dataset['LandSlope'] = dataset['LandSlope'].map(land_slope_mapping)
+    dataset['Condition1'] = dataset['Condition1'].map(cond1_mapping)
+    dataset['Condition1'] = dataset['Condition1'].fillna(0)
+    dataset['Condition1'] = dataset['Condition1'].map(int)
+    dataset['Condition2'] = dataset['Condition2'].map(cond2_mapping)
+    dataset['Condition2'] = dataset['Condition2'].fillna(0)
+    dataset['Condition2'] = dataset['Condition2'].map(int)
 
-# Checking LotFrontage - Numerical data
-# Missing - 259 (or not available option for some houses)
+    dataset['Neighborhood'] = dataset['Neighborhood'].map({
+        'MeadowV': 0, 'IDOTRR': 1, 'BrDale': 2,
+        'BrkSide': 3, 'Edwards': 4, 'OldTown': 5,
+        'Sawyer': 6, 'Blueste': 7,'SWISU': 8,
+        'NPkVill': 9, 'NAmes': 10, 'Mitchel': 11,
+        'Mitchel': 12, 'SawyerW': 13, 'NWAmes': 14,
+        'Gilbert': 15, 'Blmngtn': 16, 'CollgCr': 17,
+        'Crawfor': 18, 'ClearCr': 19, 'Somerst': 20,
+        'Veenker': 21, 'Timber': 22,
+        'StoneBr': 23, 'NridgHt': 24, 'NoRidge': 25
+    })
 
-for dataset in both_data:
+    dataset['RoofStyle'] = dataset['RoofStyle'].map({
+        'Shed': 0, 'Mansard': 1, 'Hip': 2,
+        'Gambrel': 3, 'Gable': 4, 'Flat': 5,
+    })
+    dataset['Exterior1st'] = dataset['Exterior1st'].map({
+        'CBlock': 1, 'AsphShn': 1, 'ImStucc': 1,
+        'Stone': 1, 'BrkComm': 1, 'AsbShng': 1,
+        'Stucco': 1, 'WdShing': 1, 'BrkFace': 1,
+        'CemntBd': 2, 'Plywood': 3, 'Wd Sdng': 4,
+        'MetalSd': 5, 'HdBoard': 6, 'VinylSd': 7
+    })
+    dataset['Exterior2nd'] = dataset['Exterior2nd'].map({
+        'CBlock': 1, 'AsphShn': 1, 'ImStucc': 1,
+        'Stone': 1, 'BrkComm': 1, 'AsbShng': 1,
+        'Stucco': 1, 'WdShing': 1, 'BrkFace': 1,
+        'CemntBd': 2, 'Plywood': 3, 'Wd Sdng': 4,
+        'MetalSd': 5, 'HdBoard': 6, 'VinylSd': 7
+    })
+    dataset['Exterior1st'] = dataset['Exterior1st'].fillna(0)
+    dataset['Exterior1st'] = dataset['Exterior1st'].map(int)
+
+    dataset['Exterior2nd'] = dataset['Exterior2nd'].fillna(0)
+    dataset['Exterior2nd'] = dataset['Exterior2nd'].map(int)
+
+    dataset['MasVnrType'] = dataset['MasVnrType'].map({
+        'None': 0, 'BrkFace': 1, 'Stone': 2,
+        'BrkCmn': 3
+    })
+    dataset['MasVnrType'] = dataset['MasVnrType'].fillna(0)
+    dataset['MasVnrType'] = dataset['MasVnrType'].map(int)
+
+    dataset['BsmtQual'] = dataset['BsmtQual'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['BsmtCond'] = dataset['BsmtCond'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['ExterCond'] = dataset['ExterCond'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['ExterQual'] = dataset['ExterQual'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+
+    dataset['BsmtCond'] = dataset['BsmtCond'].fillna(0)
+    dataset['BsmtCond'] = dataset['BsmtCond'].map(int)
+
+    dataset['ExterQual'] = dataset['ExterQual'].fillna(0)
+    dataset['ExterQual'] = dataset['ExterQual'].map(int)
+
+    dataset['BsmtQual'] = dataset['BsmtQual'].fillna(0)
+    dataset['BsmtQual'] = dataset['BsmtQual'].map(int)
+
+    dataset['ExterCond'] = dataset['ExterCond'].fillna(0)
+    dataset['ExterCond'] = dataset['ExterCond'].map(int)
+
+    dataset['Foundation'] = dataset['Foundation'].map({
+        'Wood': 1, 'Stone': 2, 'Slab': 3,
+        'BrkTil': 4, 'CBlock': 5, 'PCinc': 6
+    })
+    dataset['Foundation'] = dataset['Foundation'].fillna(0)
+    dataset['Foundation'] = dataset['Foundation'].map(int)
+
+    dataset['HeatingQC'] = dataset['HeatingQC'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['HeatingQC'] = dataset['HeatingQC'].fillna(0)
+    dataset['HeatingQC'] = dataset['HeatingQC'].map(int)
+
+    dataset['CentralAir'] = dataset['CentralAir'].map({
+        'N': 0, 'Y': 1
+    })
+
+    dataset['Functional'] = dataset['Functional'].map({
+        'Typ': 1, 'Sev': 2,'Mod': 3,
+        'Min2': 4,'Min1': 5, 'Maj2': 6,
+        'Maj1': 7
+    })
+    dataset['Functional'] = dataset['Functional'].fillna(0)
+    dataset['Functional'] = dataset['Functional'].map(int)
+
+
+    dataset['KitchenQual'] = dataset['KitchenQual'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['KitchenQual'] = dataset['KitchenQual'].fillna(rnd.uniform(dataset['KitchenQual'].mean() - dataset['KitchenQual'].std(), dataset['KitchenQual'].mean() + dataset['KitchenQual'].std()))
+    dataset['KitchenQual'] = dataset['KitchenQual'].map(int)
+
+    dataset['FireplaceQu'] = dataset['FireplaceQu'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['FireplaceQu'] = dataset['FireplaceQu'].fillna(0)
+    dataset['FireplaceQu'] = dataset['FireplaceQu'].map(int)
+
+    dataset['GarageType'] = dataset['GarageType'].map({
+        'Attchd': 1, 'Detchd': 2, 'BuiltIn': 3,
+        'Basment': 4, 'CarPort': 5, '2Types': 6,
+    })
+    dataset['GarageType'] = dataset['GarageType'].fillna(0)
+    dataset['GarageType'] = dataset['GarageType'].map(int)
+
+    dataset['GarageQual'] = dataset['GarageQual'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+    dataset['GarageCond'] = dataset['GarageCond'].map({
+        'Po': 1, 'TA': 2, 'Fair': 3,
+        'Gd': 4, 'Ex': 5,
+    })
+
+    dataset['GarageQual'] = dataset['GarageQual'].fillna(0)
+    dataset['GarageQual'] = dataset['GarageQual'].map(int)
+
+    dataset['GarageCond'] = dataset['GarageCond'].fillna(0)
+    dataset['GarageCond'] = dataset['GarageCond'].map(int)
+
+    dataset['SaleCondition'] = dataset['SaleCondition'].map({
+        'Normal': 1, 'Partial': 2, 'Abnorml': 3,
+        'Family': 4, 'Alloca': 5, 'AdjLand': 6
+    })
+
+    dataset['SaleType'] = dataset['SaleType'].map({
+        'WD': 1, 'New': 2, 'COD': 3,
+        'ConLD': 4, 'ConLI': 5, 'ConLw': 6, 'CWD': 7
+        , 'Oth': 8, 'Con': 9
+    })
+    dataset['SaleType'] = dataset['SaleType'].fillna(rnd.uniform(dataset['SaleType'].mean() - dataset['SaleType'].std(), dataset['SaleType'].mean() + dataset['SaleType'].std()))
+    dataset['SaleType'] = dataset['SaleType'].map(int)
+
+    # Checking LotFrontage - Numerical data
+    # Missing - 259 (or not available option for some houses)
     dataset['LotFrontage'] = dataset['LotFrontage'].fillna(0)
-print(train_df['LotFrontage'].describe())
-train_df['LotFrontageB'] = pd.cut(train_df['LotFrontage'], 5)
+    dataset.loc[dataset['LotFrontage'] <= 50, 'LotFrontage'] = 1
+    dataset.loc[(dataset['LotFrontage'] > 50) & (dataset['LotFrontage'] <= 100), 'LotFrontage'] = 2
+    dataset.loc[(dataset['LotFrontage'] > 100) & (dataset['LotFrontage'] <= 150), 'LotFrontage'] = 3
+    dataset.loc[(dataset['LotFrontage'] > 150) & (dataset['LotFrontage'] <= 200), 'LotFrontage'] = 4
+    dataset.loc[(dataset['LotFrontage'] > 200) & (dataset['LotFrontage'] <= 250), 'LotFrontage'] = 5
+    dataset.loc[dataset['LotFrontage'] > 300, 'LotFrontage'] = 6
+    dataset['LotFrontage'] = dataset['LotFrontage'].map(int)
 
-pd.DataFrame({'LotFrontage': train_df.LotFrontage}).hist(histtype='bar', grid=False, bins=25)
+    # Checking LotArea - Numerical data
+    # LotArea / SalePrice correlation ?
+    # Good correlation between sale price and lot area
+    dataset.loc[dataset['LotArea'] <= 40000, 'LotArea'] = 1
+    dataset.loc[(dataset['LotArea'] > 40000) & (dataset['LotArea'] <= 80000), 'LotArea'] = 2
+    dataset.loc[(dataset['LotArea'] > 80000) & (dataset['LotArea'] <= 120000), 'LotArea'] = 3
+    dataset.loc[(dataset['LotArea'] > 120000) & (dataset['LotArea'] <= 160000), 'LotArea'] = 4
+    dataset.loc[(dataset['LotArea'] > 160000) & (dataset['LotArea'] <= 200000), 'LotArea'] = 5
+    dataset.loc[dataset['LotArea'] > 200000, 'LotArea'] = 6
 
-plt.show()
+    dataset.loc[dataset['YearBuilt'] <= 1900, 'YearBuilt'] = 1
+    dataset.loc[(dataset['YearBuilt'] > 1900) & (dataset['YearBuilt'] <= 1920), 'YearBuilt'] = 2
+    dataset.loc[(dataset['YearBuilt'] > 1920) & (dataset['YearBuilt'] <= 1940), 'YearBuilt'] = 3
+    dataset.loc[(dataset['YearBuilt'] > 1940) & (dataset['YearBuilt'] <= 1960), 'YearBuilt'] = 4
+    dataset.loc[(dataset['YearBuilt'] > 1960) & (dataset['YearBuilt'] <= 1980), 'YearBuilt'] = 5
+    dataset.loc[dataset['YearBuilt'] > 1980, 'YearBuilt'] = 6
+
+    dataset.loc[dataset['YearRemodAdd'] <= 1900, 'YearRemodAdd'] = 1
+    dataset.loc[(dataset['YearRemodAdd'] > 1900) & (dataset['YearRemodAdd'] <= 1920), 'YearRemodAdd'] = 2
+    dataset.loc[(dataset['YearRemodAdd'] > 1920) & (dataset['YearRemodAdd'] <= 1940), 'YearRemodAdd'] = 3
+    dataset.loc[(dataset['YearRemodAdd'] > 1940) & (dataset['YearRemodAdd'] <= 1960), 'YearRemodAdd'] = 4
+    dataset.loc[(dataset['YearRemodAdd'] > 1960) & (dataset['YearRemodAdd'] <= 1980), 'YearRemodAdd'] = 5
+    dataset.loc[dataset['YearRemodAdd'] > 1980, 'YearRemodAdd'] = 6
+
+    dataset.loc[dataset['MasVnrArea'] <= 320, 'MasVnrArea'] = 1
+    dataset.loc[(dataset['MasVnrArea'] > 320) & (dataset['MasVnrArea'] <= 640), 'MasVnrArea'] = 2
+    dataset.loc[(dataset['MasVnrArea'] > 640) & (dataset['MasVnrArea'] <= 960), 'MasVnrArea'] = 3
+    dataset.loc[(dataset['MasVnrArea'] > 960) & (dataset['MasVnrArea'] <= 1280), 'MasVnrArea'] = 4
+    dataset.loc[(dataset['MasVnrArea'] > 1280), 'MasVnrArea'] = 5
+    dataset['MasVnrArea'] = dataset['MasVnrArea'].fillna(0)
+    dataset['MasVnrArea'] = dataset['MasVnrArea'].map(int)
+
+    dataset.loc[dataset['TotalBsmtSF'] <= 1000, 'TotalBsmtSF'] = 1
+    dataset.loc[(dataset['TotalBsmtSF'] > 1000) & (dataset['TotalBsmtSF'] <= 2000), 'TotalBsmtSF'] = 2
+    dataset.loc[(dataset['TotalBsmtSF'] > 2000) & (dataset['TotalBsmtSF'] <= 3000), 'TotalBsmtSF'] = 3
+    dataset.loc[(dataset['TotalBsmtSF'] > 3000) & (dataset['TotalBsmtSF'] <= 4000), 'TotalBsmtSF'] = 4
+    dataset.loc[(dataset['TotalBsmtSF'] > 4000) & (dataset['TotalBsmtSF'] <= 6500), 'TotalBsmtSF'] = 5
+    dataset['TotalBsmtSF'] = dataset['TotalBsmtSF'].fillna(0)
+    dataset['TotalBsmtSF'] = dataset['TotalBsmtSF'].map(int)
+
+    dataset.loc[dataset['GrLivArea'] <= 334, 'GrLivArea'] = 1
+    dataset.loc[(dataset['GrLivArea'] > 334) & (dataset['GrLivArea'] <= 1440), 'GrLivArea'] = 2
+    dataset.loc[(dataset['GrLivArea'] > 1440) & (dataset['GrLivArea'] <= 2500), 'GrLivArea'] = 3
+    dataset.loc[(dataset['GrLivArea'] > 2500) & (dataset['GrLivArea'] <= 3500), 'GrLivArea'] = 4
+    dataset.loc[(dataset['GrLivArea'] > 3500) & (dataset['GrLivArea'] <= 4500), 'GrLivArea'] = 5
+    dataset.loc[(dataset['GrLivArea'] > 4500), 'GrLivArea'] = 6
+
+    dataset.loc[dataset['GarageYrBlt'] <= 1900, 'GarageYrBlt'] = 1
+    dataset.loc[(dataset['GarageYrBlt'] > 1900) & (dataset['GarageYrBlt'] <= 1920), 'GarageYrBlt'] = 2
+    dataset.loc[(dataset['GarageYrBlt'] > 1920) & (dataset['GarageYrBlt'] <= 1940), 'GarageYrBlt'] = 3
+    dataset.loc[(dataset['GarageYrBlt'] > 1940) & (dataset['GarageYrBlt'] <= 1960), 'GarageYrBlt'] = 4
+    dataset.loc[(dataset['GarageYrBlt'] > 1960) & (dataset['GarageYrBlt'] <= 1980), 'GarageYrBlt'] = 5
+    dataset.loc[dataset['GarageYrBlt'] > 1980, 'GarageYrBlt'] = 6
+    dataset['GarageYrBlt'] = dataset['GarageYrBlt'].fillna(0)
+    dataset['GarageYrBlt'] = dataset['GarageYrBlt'].map(int)
+
+    dataset.loc[(dataset['GarageArea'] >= 1) & (dataset['GarageArea'] <= 300), 'GarageArea'] = 1
+    dataset.loc[(dataset['GarageArea'] > 300) & (dataset['GarageArea'] <= 600), 'GarageArea'] = 2
+    dataset.loc[(dataset['GarageArea'] > 600) & (dataset['GarageArea'] <= 900), 'GarageArea'] = 3
+    dataset.loc[(dataset['GarageArea'] > 900) & (dataset['GarageArea'] <= 1200), 'GarageArea'] = 4
+    dataset.loc[(dataset['GarageArea'] > 1200) & (dataset['GarageArea'] <= 1450), 'GarageArea'] = 5
+
+    dataset.loc[(dataset['WoodDeckSF'] >= 1) & (dataset['WoodDeckSF'] <= 170), 'WoodDeckSF'] = 1
+    dataset.loc[(dataset['WoodDeckSF'] > 170) & (dataset['WoodDeckSF'] <= 340), 'WoodDeckSF'] = 2
+    dataset.loc[(dataset['WoodDeckSF'] > 340) & (dataset['WoodDeckSF'] <= 520), 'WoodDeckSF'] = 3
+    dataset.loc[(dataset['WoodDeckSF'] > 520) & (dataset['WoodDeckSF'] <= 690), 'WoodDeckSF'] = 4
+    dataset.loc[(dataset['WoodDeckSF'] > 690) & (dataset['WoodDeckSF'] <= 880), 'WoodDeckSF'] = 5
+
+    dataset.loc[(dataset['OpenPorchSF'] >= 1) & (dataset['OpenPorchSF'] <= 110), 'OpenPorchSF'] = 1
+    dataset.loc[(dataset['OpenPorchSF'] > 110) & (dataset['OpenPorchSF'] <= 220), 'OpenPorchSF'] = 2
+    dataset.loc[(dataset['OpenPorchSF'] > 220) & (dataset['OpenPorchSF'] <= 320), 'OpenPorchSF'] = 3
+    dataset.loc[(dataset['OpenPorchSF'] > 320) & (dataset['OpenPorchSF'] <= 440), 'OpenPorchSF'] = 4
+    dataset.loc[(dataset['OpenPorchSF'] > 440) & (dataset['OpenPorchSF'] <= 550), 'OpenPorchSF'] = 5
+
+    dataset.loc[(dataset['EnclosedPorch'] >= 1) & (dataset['EnclosedPorch'] <= 110), 'EnclosedPorch'] = 1
+    dataset.loc[(dataset['EnclosedPorch'] > 110) & (dataset['EnclosedPorch'] <= 220), 'EnclosedPorch'] = 2
+    dataset.loc[(dataset['EnclosedPorch'] > 220) & (dataset['EnclosedPorch'] <= 330), 'EnclosedPorch'] = 3
+    dataset.loc[(dataset['EnclosedPorch'] > 330) & (dataset['EnclosedPorch'] <= 440), 'EnclosedPorch'] = 4
+    dataset.loc[(dataset['EnclosedPorch'] > 440) & (dataset['EnclosedPorch'] <= 555), 'EnclosedPorch'] = 5
+
+    dataset.loc[dataset['YrSold'] == 2006, 'YrSold'] = 1
+    dataset.loc[dataset['YrSold'] == 2007, 'YrSold'] = 2
+    dataset.loc[dataset['YrSold'] == 2008, 'YrSold'] = 3
+    dataset.loc[dataset['YrSold'] == 2009, 'YrSold'] = 4
+    dataset.loc[dataset['YrSold'] == 2010, 'YrSold'] = 5
+
+    dataset.loc[dataset['MSSubClass'] == 20, 'MSSubClass'] = 1
+    dataset.loc[dataset['MSSubClass'] == 30, 'MSSubClass'] = 2
+    dataset.loc[dataset['MSSubClass'] == 40, 'MSSubClass'] = 3
+    dataset.loc[dataset['MSSubClass'] == 45, 'MSSubClass'] = 4
+    dataset.loc[dataset['MSSubClass'] == 50, 'MSSubClass'] = 5
+    dataset.loc[dataset['MSSubClass'] == 60, 'MSSubClass'] = 6
+    dataset.loc[dataset['MSSubClass'] == 70, 'MSSubClass'] = 7
+    dataset.loc[dataset['MSSubClass'] == 75, 'MSSubClass'] = 8
+    dataset.loc[dataset['MSSubClass'] == 80, 'MSSubClass'] = 9
+    dataset.loc[dataset['MSSubClass'] == 85, 'MSSubClass'] = 10
+    dataset.loc[dataset['MSSubClass'] == 90, 'MSSubClass'] = 11
+    dataset.loc[dataset['MSSubClass'] == 120, 'MSSubClass'] = 12
+    dataset.loc[dataset['MSSubClass'] == 150, 'MSSubClass'] = 13
+    dataset.loc[dataset['MSSubClass'] == 160, 'MSSubClass'] = 14
+    dataset.loc[dataset['MSSubClass'] == 180, 'MSSubClass'] = 15
+    dataset.loc[dataset['MSSubClass'] == 190, 'MSSubClass'] = 16
+
+    dataset['MSZoning'] = dataset['MSZoning'].fillna(0)
+    dataset['MSZoning'] = dataset['MSZoning'].map(int)
+
+    dataset['BsmtFullBath'] = dataset['BsmtFullBath'].fillna(0)
+    dataset['BsmtFullBath'] = dataset['BsmtFullBath'].map(int)
+    dataset['BsmtHalfBath'] = dataset['BsmtHalfBath'].fillna(0)
+    dataset['BsmtHalfBath'] = dataset['BsmtHalfBath'].map(int)
+    dataset['GarageCars'] = dataset['GarageCars'].fillna(0)
+    dataset['GarageCars'] = dataset['GarageCars'].map(int)
+    dataset['GarageArea'] = dataset['GarageArea'].fillna(0)
+    dataset['GarageArea'] = dataset['GarageArea'].map(int)
 
 
-# for dataset in both_data:
-#     dataset.loc[ dataset['Age'] <= 16, 'Age'] = 0
-#     dataset.loc[(dataset['Age'] > 16) & (dataset['Age'] <= 32), 'Age'] = 1
-#     dataset.loc[(dataset['Age'] > 32) & (dataset['Age'] <= 48), 'Age'] = 2
-#     dataset.loc[(dataset['Age'] > 48) & (dataset['Age'] <= 64), 'Age'] = 3
-#     dataset.loc[ dataset['Age'] > 64, 'Age'] = 4
-
-# Checking LotArea - Numerical data
-# LotArea / SalePrice correlation ?
-# Good correlation between sale price and lot area
-
-# plt.gca().set_xlim([0,25000])
-# plt.plot(train_df.LotArea, np.log(train_df.SalePrice), '.', alpha=0.3)
-# plt.show()
-
-# Checking Street - Categorical data
-# Almost 100% Streets are Pavement, only 6 out of 1454 Gravel
-# If all houses have Pave streets then Sale PRice won't depend on this feature
-# print(train_df['Street'].value_counts())
-
-# Checking Alley - Categorical data
-# 1369 missing entries - this potentially could be dropped
+both_data = [train_df, test_df]
 #
-# print(train_df['Alley'].value_counts())
-# print(train_df['Alley'].isna().sum())
-
-# LotShape - Categorical data
-# make 2 cats - Reg and Irregular
-# print(train_df['LotShape'])
-# print(train_df['LotShape'].value_counts())
-# print(train_df['Alley'].isnull().sum())
-
-# LandContour - Cat Data
-# ~90% lv(Flat surface) , Could be grouped by Level and Rest
-# print(train_df['LandContour'])
-# print(train_df['LandContour'].value_counts())
-# print(train_df[['LandContour', 'SalePrice']].groupby('LandContour').mean())
-
-# Utilities - cat data
-# Looks like all houses got All utility options, so this data won't be a good predictor
-# Could be dropped
-# print(train_df['Utilities'])
-# print(train_df['Utilities'].value_counts())
-#
-# LotConfig - Cat data
-# Group by 4, join FR2-FR3 - turn to ordinal
-# print(train_df['LotConfig'])
-# print(train_df['LotConfig'].value_counts())
-# print(train_df[['LotConfig', 'SalePrice']].groupby('LotConfig').mean())
-
-# LandSlope  Cat data
-# 90% of it Normal slope land , rest of 2 cat put into one cat : Abnormal slope
-# make ordinal
-# print(train_df['LandSlope'])
-# print(train_df['LandSlope'].value_counts())
-# print(train_df[['LandSlope', 'SalePrice']].groupby('LandSlope').mean())
-
-# Neighborhood - Cat data
-# I would assume this feature will have strong correlation with SalePrice
-# One of the Main predictors along with LotArea
-# print(train_df['Neighborhood'])
-# print(train_df['Neighborhood'].value_counts())
-# print(train_df[['Neighborhood', 'SalePrice']].groupby('Neighborhood').mean().sort_values(by='SalePrice', ascending=False))
-#
-# sns.catplot(x="Neighborhood", y="SalePrice", hue="Neighborhood", kind="swarm",height=7, aspect=5, data=train_df);
-# plt.show()
-
-# Condition1 - Cat Data
-# Again large majority (~90%)of house located in nornal proximity to various conditions
-# rest 10% are Not Normal and Good
-# Could be grouped onto 3 cats or 2
-# print(train_df['Condition1'])
-# print(train_df['Condition1'].value_counts())
-# print(train_df[['Condition1', 'SalePrice']].groupby('Condition1').mean())
-#
-# Condition2 is duplicate
-# These two columns could be joined and presented as an artificial feature for a model
-# If Con1 Bad but Con2 Good = Con12 Norm
+# print(train_df.info())
+# print(test_df.info())
+# print(train_df.head())
 
 
-# BldgType and HouseStype  could be dropped as both cols represented in MSSubClass
+# Get X parameters for and Y output separated
+X_train = train_df.drop("SalePrice", axis=1)
+Y_train = train_df["SalePrice"]
+X_test = test_df.copy()
 
-# OverallQual and OverllCond have a strong correlation with SalePrice
-# Another 2 important predictors for our model
-# print(train_df['OverallQual'].value_counts())
-# print(train_df[['OverallQual', 'SalePrice']].groupby('OverallQual').mean())
-# sns.catplot(x="OverallQual", y="SalePrice", hue="OverallQual", kind="swarm",height=7, aspect=5, data=train_df);
-# plt.show()
-
-#
-# print(train_df['OverallCond'].value_counts())
-# print(train_df[['OverallCond', 'SalePrice']].groupby('OverallCond').mean())
-# sns.catplot(x="OverallCond", y="SalePrice", hue="OverallCond", kind="swarm",height=7, aspect=5, data=train_df);
-# plt.show()
+logreg = LogisticRegression()
+logreg.fit(X_train, Y_train)
+Y_pred = logreg.predict(X_test)
+acc_log = round(logreg.score(X_train, Y_train) * 100, 2)
+coeff_df = pd.DataFrame(train_df.columns.delete(0))
+coeff_df.columns = ['Feature']
+coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
 
 
-# YearBuilt - log of SalePrice , show a correlation that house prices were going up over years
-# # Good predictor
-# print(train_df['YearBuilt'].value_counts())
-# print(train_df[['YearBuilt', 'SalePrice']].groupby('YearBuilt').mean())
-# print(train_df[['YearBuilt', 'SalePrice']].groupby('YearBuilt').mean())
-# plt.plot(train_df.YearBuilt, np.log(train_df.SalePrice), '.', alpha=0.3)
-# plt.show()
-# #
+# print(coeff_df.sort_values(by='Correlation', ascending=False))
+# print(acc_log)
+print(mean_squared_log_error(Y_train[1:], Y_pred))
 
-# YearRemodAdd - numerical ord , comparing YB and YRA we can see affected houses between 1880 and 1950
-# ANy changes in YBD could be mapped to YB
-# print(train_df['YearRemodAdd'].value_counts())
-# print(train_df[['YearRemodAdd', 'SalePrice']].groupby('YearRemodAdd').mean())
-# print(pd.pivot_table(train_df[['YearRemodAdd', 'YearBuilt', 'SalePrice']], values='SalePrice', index=['YearRemodAdd', 'YearBuilt'],))
-# print(train_df[['YearRemodAdd', 'YearBuilt' ,'SalePrice']].groupby('YearBuilt')).mean()
-# plt.plot(train_df.YearRemodAdd, np.log(train_df.SalePrice), '.', alpha=0.3)
-# plt.show()
-#
-
-# Cat - Data turn into ord / 3 grups
-# print(train_df['RoofStyle'])
-# print(train_df['RoofStyle'].value_counts())
-# print(train_df[['RoofStyle', 'SalePrice']].groupby('RoofStyle').mean())
-
-# All Roofls are made of almost 1 material / not a good predictor
-# print(train_df['RoofMatl'])
-# print(train_df['RoofMatl'].value_counts())
-# print(train_df[['RoofMatl', 'SalePrice']].groupby('RoofMatl').mean())
-
-# Exterior1st / Exterior1st
-# Do same as Con1 and Cond2
-# print(train_df['Exterior1st'])
-# print(train_df['Exterior1st'].value_counts())
-# print(train_df[['Exterior1st', 'SalePrice']].groupby('Exterior1st').mean())
-# print(train_df['Exterior1st'])
-# print(train_df['Exterior1st'].value_counts())
-# print(train_df[['Exterior1st', 'SalePrice']].groupby('Exterior1st').mean())
+grboostregress = GradientBoostingRegressor()
+grboostregress.fit(X_train, Y_train)
+Y_pred = grboostregress.predict(X_test)
+print(mean_squared_log_error(Y_train[1:], Y_pred))
 
 
-# MasVnrType /MasVnrArea
-# 2 goups (No type + crkcmn  / BrkFace + Stone)
-#
-# print(train_df['MasVnrType'])
-# print(train_df['MasVnrType'].value_counts())
-# print(train_df[['MasVnrType', 'SalePrice']].groupby('MasVnrType').mean())
-# print(train_df['MasVnrArea'])
-# print(train_df['MasVnrArea'].value_counts())
-# print(train_df[['MasVnrArea', 'SalePrice']].groupby('MasVnrArea').mean())
-# print(pd.pivot_table(train_df[['MasVnrType', 'MasVnrArea', 'SalePrice']], values='SalePrice', index=['MasVnrType', 'MasVnrArea']))
-#
-
-# ExterQual, ExterCond - Turn ordinal  , poors and excellent difference from good and fair signufucant
-# we dont join and just turn it into ordinal
-
-# Foundation - turn to ordinal (full set)
+knnr = KNeighborsRegressor()
+knnr.fit(X_train, Y_train)
+Y_pred = knnr.predict(X_test)
+print(mean_squared_log_error(Y_train[1:], Y_pred))
 
 
-# All categorical basement data could be joined and new Basement column created
-# gaps must be filled
-# Leave total basement area as numerical but make it ordinal
-# print(train_df['BsmtQual'])
-# print(train_df['BsmtQual'].value_counts())
-# print(train_df[['BsmtQual', 'SalePrice']].groupby('BsmtQual').mean())
-# print(train_df['BsmtCond'])
-# print(train_df['BsmtCond'].value_counts())
-# print(train_df[['BsmtCond', 'SalePrice']].groupby('BsmtCond').mean())
-#
-# Use GrLivArea - its a comb of 1st and 2nd
-# Think about what to do with Lower Q Finish of the floor
-# print(train_df[['1stFlrSF', '2ndFlrSF', 'GrLivArea']])
-# print(train_df[['GrLivArea', 'SalePrice']].groupby('GrLivArea').mean())
-
-
-# combine 0 - 0  half is 1 and ful is 2 , new column and drop 2 old
-# print(train_df[['BsmtFullBath', 'BsmtHalfBath']])
-#
-#
-# Leave as it is
-# print(train_df['FullBath'].value_counts())
-# print(train_df['HalfBath'].value_counts())
-# print(train_df[['FullBath', 'HalfBath']])
-#
-
-
-# #Functional
-# print(train_df['Functional'].value_counts())
-# print(train_df[['Functional', 'SalePrice']].groupby('Functional').mean())
-
-# F irePlace - Turn into ordinal
-# print(train_df['Fireplaces'].value_counts())
-#
-# print(train_df['FireplaceQu'].value_counts())
-
-# Drop PoolQC , MiscF, Fence, MiscF
-
-
-# Combine both sets of data set for modification convenience
-
-
-# Turn HouseStyle into ordinal
-# housestyle_mapping = {"SFoyer": 1, "SLvl": 1, "1Story": 2, "1.5Fin": 3, "1.5Unf": 3,
-#                       "2Story": 4, "2.5Fin": 5, "2.5Unf": 5}
-# # Turn  BldgType to ordinal
-# bldgtype_mapping = {"2fmCon": 1, "Duplex": 1, "Twnhs": 2, "TwnhsE": 2, "1Fam": 3}
-#
-# # Turn MSZoning to ordinal
-# zoning_mapping = {"C (all)": 1, "RM": 2, "RH": 3, "RL": 4, "FV": 5}
-#
-# for dataset in both_data:
-#     dataset['HouseStyle'] = dataset['HouseStyle'].map(housestyle_mapping)
-#     dataset['BldgType'] = dataset['BldgType'].map(bldgtype_mapping)
-#     dataset['MSZoning'] = dataset['MSZoning'].map(zoning_mapping)
-#
-# # Creating new feature HouseStyleType
-# for dataset in both_data:
-#     dataset['HouseStyleType'] = dataset['HouseStyle'] + dataset['BldgType']
-
-# for dataset in both_data:
-#     dataset.loc[dataset['LotArea'] <= 55000, 'LotArea'] = 1
-#     dataset.loc[(dataset['LotArea'] > 55000) & (dataset['LotArea'] <= 110000), 'LotArea'] = 2
-#     dataset.loc[(dataset['LotArea'] > 110000) & (dataset['LotArea'] <= 160000), 'LotArea'] = 3
-#     dataset.loc[dataset['LotArea'] > 160000, 'LotArea'] = 4
-
-# All dropped columns
-# train_df = train_df.drop(['HouseStyle', 'BldgType', 'MSSubClass', 'LotFrontage'], axis=1)
-# test_df = test_df.drop(['HouseStyle', 'BldgType', 'MSSubClass', 'LotFrontage'], axis=1)
-
-
-# print(train_df[['LotArea', 'SalePrice']].groupby(['LotArea']).mean().sort_values(by='LotArea', ascending=False))
-# print(train_df[['HouseStyleType', 'SalePrice']].groupby(['HouseStyleType']).mean().sort_values(by='HouseStyleType', ascending=False))
-# print(train_df[['MSZoning', 'SalePrice']].groupby(['MSZoning']).mean().sort_values(by='MSZoning', ascending=False))
-
-# plt.hist(train_df.SalePrice, bins=20)
-# plt.show()
-# plt.hist(np.log(train_df.SalePrice), bins=20)
-# plt.show()
-#
-# sns.countplot(train_df.MSZoning)
-# plt.show()
-
-#
-# b = plt
-# ax1 = b.gca()
-# ax1.set_xlim([0,25000])
-# b.plot(train_df.LotArea, np.log(train_df.SalePrice), '.', alpha=0.3)
-# b.show()
-
-
-# print(train_df[['Alley']])
-
-
-# print(train_df.shape)
-# print(test_df.shape)
-
-# print(train_df[['MSZoning', 'SalePrice']].groupby(['MSZoning']).mean().sort_values(by='SalePrice', ascending=False))

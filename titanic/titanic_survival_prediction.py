@@ -6,6 +6,8 @@ import random as rnd
 import seaborn as sns
 import matplotlib.pyplot as plt
 # machine learning
+from sklearn.ensemble import GradientBoostingRegressor
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC, LinearSVC
 from sklearn.ensemble import RandomForestClassifier
