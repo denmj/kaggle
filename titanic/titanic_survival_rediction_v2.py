@@ -11,6 +11,7 @@ from sklearn import preprocessing as prep
 # ml models
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 
 
@@ -123,6 +124,7 @@ print(train_df.corr())
 # Y_train = train_df["Survived"]
 # X_test = test_df.drop("PassengerId", axis=1).copy()
 
+
 X_train = np.asarray(train_df.drop("Survived", axis=1))
 y_train = np.asarray(train_df["Survived"])
 X_out_of_sample = np.asarray(test_df)
@@ -131,26 +133,38 @@ print(X_train[0:5])
 print(y_train[0:5])
 print(X_out_of_sample[0:5])
 
-X_tr, X_ts, y_tr, y_ts = train_test_split(X_train, y_train, test_size=0.3, random_state=4)
+X_train = prep.StandardScaler().fit(X_train).transform(X_train)
+
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=4)
 
 
 X_train = prep.StandardScaler().fit(X_train).transform(X_train)
-print(X_train[0:5])
-
 
 # Trying different models
 lr = LogisticRegression(solver='liblinear')
 lr.fit(X_train, y_train)
-print(lr)
-y_test_hat_lr = lr.predict(X_out_of_sample)
-acc_lr = round(lr.score(X_train, y_train) * 100, 2)
+acc_lr_train = round(lr.score(X_train, y_train) * 100, 2)
+acc_lr_val = round(lr.score(X_val, y_val) * 100, 2)
+
 
 
 svm = svm.SVC(kernel='rbf')
 svm.fit(X_train, y_train)
-y_test_hat_svm = svm.predict(X_out_of_sample)
-acc_svm = round(svm.score(X_train, y_train) * 100, 2)
+acc_svm_train = round(svm.score(X_train, y_train) * 100, 2)
+acc_svm_val = round(svm.score(X_val, y_val) * 100, 2)
 
 
-print("LogReg: ", acc_lr)
-print("SVM: ", acc_svm)
+rfclf = RandomForestClassifier()
+rfclf.fit(X_train, y_train)
+acc_rand_forest_train = round(rfclf.score(X_train, y_train) * 100, 2)
+acc_rand_forest_val = round(rfclf.score(X_val, y_val) * 100, 2)
+
+print("LogReg for train set: ", acc_lr_train)
+print("LogReg for val set: ", acc_lr_val)
+
+print("SVM for train set: ", acc_svm_train)
+print("SVM for val set: ", acc_svm_val)
+
+
+print("RF for train set: ", acc_rand_forest_train)
+print("RF for val set: ", acc_rand_forest_val)
