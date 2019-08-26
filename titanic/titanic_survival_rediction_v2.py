@@ -29,7 +29,9 @@ def check_miss_values(data):
 
 train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
+pass_id = test_df["PassengerId"]
 
+print(pass_id.head())
 # Check data set for missing values
 # Drop 'Cabin' col
 # Drop Ticket and Id column - doesn't tell any useful information
@@ -134,6 +136,8 @@ print(y_train[0:5])
 print(X_out_of_sample[0:5])
 
 X_train = prep.StandardScaler().fit(X_train).transform(X_train)
+X_out_of_sample = prep.StandardScaler().fit(X_out_of_sample).transform(X_out_of_sample)
+
 
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=4)
 
@@ -168,3 +172,14 @@ print("SVM for val set: ", acc_svm_val)
 
 print("RF for train set: ", acc_rand_forest_train)
 print("RF for val set: ", acc_rand_forest_val)
+
+
+# Best model
+test_Y = svm.predict(X_out_of_sample)
+
+submission = pd.DataFrame({
+        "PassengerId": pass_id,
+        "Survived": test_Y
+    })
+
+submission.to_csv('submission_2.csv', index=False)
