@@ -6,8 +6,8 @@ import random as rnd
 import seaborn as sns
 import matplotlib.pyplot as plt
 # machine learning
-from sklearn.metrics import mean_squared_log_error
-from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import mean_squared_log_error, mean_squared_error
+from sklearn.linear_model import LogisticRegression, Ridge
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import GradientBoostingRegressor
 
@@ -67,14 +67,7 @@ cond1_mapping = {"Norm": 2, "Bad": 1, "Good": 3}
 cond2_mapping = {"Norm": 2, "Bad": 1, "Good": 3}
 
 for dataset in both_data:
-    dataset.drop(['Id', 'Street', 'Alley', 'Utilities',
-                  'BldgType','HouseStyle', 'RoofMatl',
-                  'PoolQC', 'Fence', 'MiscFeature',
-                  'BsmtExposure', 'BsmtFinType1','BsmtFinSF1',
-                  'BsmtFinType2','BsmtFinSF2', 'BsmtUnfSF',
-                  'Heating', 'Electrical','1stFlrSF','2ndFlrSF',
-                  'LowQualFinSF', 'GarageFinish','PavedDrive',
-                  '3SsnPorch','ScreenPorch', 'PoolArea'], axis=1, inplace=True)
+
 
     dataset['MSZoning'] = dataset['MSZoning'].replace(['RL', 'RM', 'FV', 'RH'], 'Residential')
     dataset['MSZoning'] = dataset['MSZoning'].replace(['C (all)'], 'Commercial')
@@ -132,6 +125,8 @@ for dataset in both_data:
         'CemntBd': 2, 'Plywood': 3, 'Wd Sdng': 4,
         'MetalSd': 5, 'HdBoard': 6, 'VinylSd': 7
     })
+
+
     dataset['Exterior1st'] = dataset['Exterior1st'].fillna(0)
     dataset['Exterior1st'] = dataset['Exterior1st'].map(int)
 
@@ -376,12 +371,68 @@ for dataset in both_data:
     dataset['GarageArea'] = dataset['GarageArea'].fillna(0)
     dataset['GarageArea'] = dataset['GarageArea'].map(int)
 
+    dataset['ExtoriorComb'] = dataset['Exterior2nd'] + dataset['Exterior1st']
+    dataset['Condition12'] =  dataset['Condition1'] + dataset['Condition2']
+
+
+    dataset.drop(['Id', 'Street', 'Alley', 'Utilities',
+                  'BldgType', 'HouseStyle', 'RoofMatl',
+                  'PoolQC', 'Fence', 'MiscFeature',
+                  'BsmtExposure', 'BsmtFinType1', 'BsmtFinSF1',
+                  'BsmtFinType2', 'BsmtFinSF2', 'BsmtUnfSF',
+                  'Heating', '1stFlrSF', '2ndFlrSF',
+                  'LowQualFinSF', 'GarageFinish', 'PavedDrive',
+                  '3SsnPorch', 'ScreenPorch', 'PoolArea', 'Exterior1st', 'Exterior2nd','Condition1','Condition2','MasVnrType', 'MasVnrArea'], axis=1, inplace=True)
+
+
+total_miss = train_df.isnull().sum().sort_values(ascending=False)
+percent = (train_df.isnull().sum() / train_df.isnull().count()).sort_values(ascending=False)
+miss_data = pd.concat([total_miss, percent], axis=1, keys=['Total', 'Percent'])
+
+
+print(miss_data.head(20))
+
+
+corr_mat = train_df.corr()
+col = corr_mat.columns.values
+
+
+# print(train_df.info())
+# print(test_df.info())
+# print(col)
+
+
+cat_cols = train_df.select_dtypes(include='object',).columns.values
+num_cols = train_df.select_dtypes(include=['int64' , 'float64']).columns.values
+
+# print(cat_cols)
+# print(num_cols)
+
+# Cehck corrs > 0.5 and < - 0.5 pairs
+
+
+def corr_table(table):
+    for row in table:
+        for col in table:
+            if 0.5 < table.at[row,col] < 1:
+                print(row,col, corr_mat.at[row,col])
+            if -1 < corr_mat.at[row,col] < -0.5:
+                print(row,col, corr_mat.at[row,col])
+
+#orr_table(corr_mat)
+
+# corr_table(corr_mat)
 
 both_data = [train_df, test_df]
+
+print(train_df.shape, test_df.shape)
+
+
 #
 # print(train_df.info())
 # print(test_df.info())
 # print(train_df.head())
+
 
 
 # Get X parameters for and Y output separated
@@ -389,28 +440,30 @@ X_train = train_df.drop("SalePrice", axis=1)
 Y_train = train_df["SalePrice"]
 X_test = test_df.copy()
 
-logreg = LogisticRegression()
-logreg.fit(X_train, Y_train)
-Y_pred = logreg.predict(X_test)
-acc_log = round(logreg.score(X_train, Y_train) * 100, 2)
-coeff_df = pd.DataFrame(train_df.columns.delete(0))
-coeff_df.columns = ['Feature']
-coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
-
-
+# logreg = LogisticRegression()
+# logreg.fit(X_train, Y_train)
+# Y_pred = logreg.predict(X_test)
+# acc_log = round(logreg.score(X_train, Y_train) * 100, 2)
+# coeff_df = pd.DataFrame(train_df.columns.delete(0))
+# coeff_df.columns = ['Feature']
+# coeff_df["Correlation"] = pd.Series(logreg.coef_[0])
+#
+#
 # print(coeff_df.sort_values(by='Correlation', ascending=False))
 # print(acc_log)
-print(mean_squared_log_error(Y_train[1:], Y_pred))
-
-grboostregress = GradientBoostingRegressor()
-grboostregress.fit(X_train, Y_train)
-Y_pred = grboostregress.predict(X_test)
-print(mean_squared_log_error(Y_train[1:], Y_pred))
-
-
-knnr = KNeighborsRegressor()
-knnr.fit(X_train, Y_train)
-Y_pred = knnr.predict(X_test)
-print(mean_squared_log_error(Y_train[1:], Y_pred))
-
+# print(mean_squared_log_error(Y_train[1:], Y_pred))
+#
+# grboostregress = GradientBoostingRegressor()
+# grboostregress.fit(X_train, Y_train)
+# Y_pred = grboostregress.predict(X_test)
+# print(mean_squared_log_error(Y_train[1:], Y_pred))
+#
+#
+# knnr = KNeighborsRegressor()
+# knnr.fit(X_train, Y_train)
+# Y_pred = knnr.predict(X_test)
+# print(mean_squared_log_error(Y_train[1:], Y_pred))
+#
+#
+#
 
