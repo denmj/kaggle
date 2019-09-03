@@ -9,6 +9,22 @@ import matplotlib.pyplot as plt
 from sklearn import preprocessing as prep
 
 
+def corr_mat(df):
+    corr = df.corr()
+    ax = sns.heatmap(
+        corr,
+        vmin=-1, vmax=1, center=0,
+        cmap=sns.diverging_palette(20, 220, n=200),
+        square=True
+    )
+    ax.set_xticklabels(
+        ax.get_xticklabels(),
+        rotation=45,
+        horizontalalignment='right'
+    )
+    plt.show()
+
+
 def missing_zero_values_table(df):
     zero_val = (df == 0.00).astype(int).sum(axis=0)
     mis_val = df.isnull().sum()
@@ -57,6 +73,8 @@ print("cols with nan: ", train_df.columns[train_df.isnull().any()])
 print("number of NaN:", train_df["MSSubClass"].isnull().sum())
 # print("number of NaN values for the column bathrooms :", df['bathrooms'].isnull().sum())
 print(train_df.describe())
+
+corr_mat(train_df)
 
 # Check for missing vals in cols
 # cols_with_missing_vals = train_df.columns[train_df.isnull().any()]
