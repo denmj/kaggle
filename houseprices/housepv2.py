@@ -14,8 +14,9 @@ def corr_mat(df):
     ax = sns.heatmap(
         corr,
         vmin=-1, vmax=1, center=0,
-        cmap=sns.diverging_palette(20, 220, n=200),
-        square=True
+        cmap="YlGnBu",
+        square=True,
+        linewidths=.5
     )
     ax.set_xticklabels(
         ax.get_xticklabels(),
@@ -62,19 +63,25 @@ train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
 df_id = train_df["Id"]
 
+# Quick check for empty vals in  cols
+# Drop cols with more than 50% empty cells
+
+train_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], axis=1, inplace=True)
+test_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], axis=1, inplace=True)
+t = missing_zero_values_table(train_df)
+print(t)
 
 print(train_df.dtypes)
 
-print(train_df.shape)
-print(test_df.shape)
 
-print("All cols names :", train_df.columns)
-print("cols with nan: ", train_df.columns[train_df.isnull().any()])
-print("number of NaN:", train_df["MSSubClass"].isnull().sum())
+# print("All cols names :", train_df.columns)
+# print("cols with nan: ", train_df.columns[train_df.isnull().any()])
+# print("number of NaN:", train_df["MSSubClass"].isnull().sum())
 # print("number of NaN values for the column bathrooms :", df['bathrooms'].isnull().sum())
-print(train_df.describe())
 
+# print(train_df.describe())
 corr_mat(train_df)
+# print(train_df.corr())
 
 # Check for missing vals in cols
 # cols_with_missing_vals = train_df.columns[train_df.isnull().any()]
