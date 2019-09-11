@@ -26,6 +26,36 @@ def corr_mat(df):
     plt.show()
 
 
+def stats(df, pred=None):
+    obs = df.shape[0]
+    types = df.dtypes
+    counts = df.apply(lambda x: x.count())
+    uniques = df.apply(lambda x: [x.unique()])
+    nulls = df.apply(lambda x: x.isnull().sum())
+    distincts = df.apply(lambda x: x.unique().shape[0])
+    missing_ration = (df.isnull().sum() / obs) * 100
+    skewness = df.skew()
+    kurtosis = df.kurt()
+    print('Data shape:', df.shape)
+
+    if pred is None:
+        cols = ['types', 'counts', 'distincts', 'nulls', 'missing ration', 'uniques', 'skewness', 'kurtosis']
+        str = pd.concat([types, counts, distincts, nulls, missing_ration, uniques, skewness, kurtosis], axis=1)
+
+    else:
+        corr = df.corr()[pred]
+        str = pd.concat([types, counts, distincts, nulls, missing_ration, uniques, skewness, kurtosis, corr], axis=1,
+                        sort=False)
+        corr_col = 'corr ' + pred
+        cols = ['types', 'counts', 'distincts', 'nulls', 'missing_ration', 'uniques', 'skewness', 'kurtosis', corr_col]
+
+    str.columns = cols
+    dtypes = str.types.value_counts()
+    print('___________________________\nData types:\n', str.types.value_counts())
+    print('___________________________')
+    return str
+
+
 def missing_zero_values_table(df):
     zero_val = (df == 0.00).astype(int).sum(axis=0)
     mis_val = df.isnull().sum()
@@ -72,6 +102,7 @@ t = missing_zero_values_table(train_df)
 print(t)
 
 print(train_df.dtypes)
+corr_mat(train_df)
 
 
 # print("All cols names :", train_df.columns)
@@ -80,7 +111,6 @@ print(train_df.dtypes)
 # print("number of NaN values for the column bathrooms :", df['bathrooms'].isnull().sum())
 
 # print(train_df.describe())
-corr_mat(train_df)
 # print(train_df.corr())
 
 # Check for missing vals in cols
