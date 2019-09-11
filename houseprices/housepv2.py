@@ -101,8 +101,10 @@ test_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], a
 t = missing_zero_values_table(train_df)
 print(t)
 
-print(train_df.dtypes)
 corr_mat(train_df)
+
+details = stats(train_df, 'SalePrice')
+print(details.sort_values(by='corr SalePrice', ascending=False))
 
 
 # print("All cols names :", train_df.columns)
