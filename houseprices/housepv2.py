@@ -122,13 +122,20 @@ print(details.sort_values(by='corr SalePrice', ascending=False))
 # visualization of some data
 
 fig = plt.figure(figsize=(25, 20))
-sns.set(font_scale=1)
+sns.set(font_scale=2)
 
 # (Corr= 0.790982) Box plot overallqual/salePrice
 fig1 = fig.add_subplot(221)
-sns.boxplot(x='OverallQual', y='SalePrice', data=train_df[['SalePrice', 'OverallQual']])
+sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
 # Next one
 fig2 = fig.add_subplot(222)
-sns.scatterplot(x='GrLivArea', y='SalePrice', data=train_df[['SalePrice', 'GrLivArea']])
+sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
+
+fig3 = fig.add_subplot(223)
+sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
+
+fig4 = fig.add_subplot(224)
+sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
+
 
 plt.show()
