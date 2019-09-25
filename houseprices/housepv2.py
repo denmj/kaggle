@@ -4,6 +4,7 @@ import numpy as np
 # visualization package
 import seaborn as sns
 import matplotlib.pyplot as plt
+import scipy
 
 #pre precessing
 from sklearn import preprocessing as prep
@@ -101,10 +102,10 @@ test_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], a
 t = missing_zero_values_table(train_df)
 print(t)
 
-corr_mat(train_df)
+# corr_mat(train_df)
 
 details = stats(train_df, 'SalePrice')
-print(details.sort_values(by='corr SalePrice', ascending=False))
+# print(details.sort_values(by='corr SalePrice', ascending=False))
 
 
 # print("All cols names :", train_df.columns)
@@ -119,23 +120,34 @@ print(details.sort_values(by='corr SalePrice', ascending=False))
 # cols_with_missing_vals = train_df.columns[train_df.isnull().any()]
 # print(cols_with_missing_vals)
 
+# Target variable
+
+plt.subplots(figsize=(12, 9))
+sns.distplot(train_df['SalePrice'], fit=scipy.stats.norm)
+plt.show()
+
+
 # visualization of some data
 
 fig = plt.figure(figsize=(25, 20))
 sns.set(font_scale=2)
 
 # (Corr= 0.790982) Box plot overallqual/salePrice
-fig1 = fig.add_subplot(221)
+fig1 = fig.add_subplot(331)
 sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
 # Next one
-fig2 = fig.add_subplot(222)
+fig2 = fig.add_subplot(332)
 sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
 
-fig3 = fig.add_subplot(223)
+fig3 = fig.add_subplot(333)
 sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
 
-fig4 = fig.add_subplot(224)
+fig4 = fig.add_subplot(334)
 sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
 
+fig5 = fig.add_subplot(335)
+sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
 
 plt.show()
+
+print(train_df['LotFrontage'].median())
