@@ -51,7 +51,7 @@ def stats(df, pred=None):
 
     str.columns = cols
     dtypes = str.types.value_counts()
-    print('___________________________\nData types:\n', str.types.value_counts())
+    print('___________________________\n Data types:\n', str.types.value_counts())
     print('___________________________')
     return str
 
@@ -118,3 +118,17 @@ print(details.sort_values(by='corr SalePrice', ascending=False))
 # Check for missing vals in cols
 # cols_with_missing_vals = train_df.columns[train_df.isnull().any()]
 # print(cols_with_missing_vals)
+
+# visualization of some data
+
+fig = plt.figure(figsize=(25, 20))
+sns.set(font_scale=1)
+
+# (Corr= 0.790982) Box plot overallqual/salePrice
+fig1 = fig.add_subplot(221)
+sns.boxplot(x='OverallQual', y='SalePrice', data=train_df[['SalePrice', 'OverallQual']])
+# Next one
+fig2 = fig.add_subplot(222)
+sns.scatterplot(x='GrLivArea', y='SalePrice', data=train_df[['SalePrice', 'GrLivArea']])
+
+plt.show()
