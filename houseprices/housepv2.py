@@ -99,6 +99,16 @@ df_id = train_df["Id"]
 
 train_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], axis=1, inplace=True)
 test_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], axis=1, inplace=True)
+# Get median of LotFrontage and replace NaN
+median_lotFr = train_df['LotFrontage'].median()
+train_df['LotFrontage'].replace(np.nan, median_lotFr, inplace=True)
+# Replace missing values in Garage Year build by 0
+train_df['GarageYrBlt'].replace(np.nan, 0, inplace=True)
+
+# Replace missing values by none in categorical vars for garage
+for col in ['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond']:
+    train_df[col].replace(np.nan, 'None', inplace=True)
+
 t = missing_zero_values_table(train_df)
 print(t)
 
@@ -124,30 +134,39 @@ details = stats(train_df, 'SalePrice')
 
 plt.subplots(figsize=(12, 9))
 sns.distplot(train_df['SalePrice'], fit=scipy.stats.norm)
-plt.show()
+# plt.show()
 
 
 # visualization of some data
 
-fig = plt.figure(figsize=(25, 20))
+fig = plt.figure(figsize=(30, 25))
 sns.set(font_scale=2)
 
 # (Corr= 0.790982) Box plot overallqual/salePrice
-fig1 = fig.add_subplot(331)
+fig1 = fig.add_subplot(231)
 sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
 # Next one
-fig2 = fig.add_subplot(332)
+fig2 = fig.add_subplot(232)
 sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
 
-fig3 = fig.add_subplot(333)
+fig3 = fig.add_subplot(233)
 sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
 
-fig4 = fig.add_subplot(334)
+fig4 = fig.add_subplot(234)
 sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
 
-fig5 = fig.add_subplot(335)
+fig5 = fig.add_subplot(235)
 sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
 
-plt.show()
+fig6 = fig.add_subplot(236)
+sns.scatterplot(x='1stFlrSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', '1stFlrSF', 'OverallQual']])
 
-print(train_df['LotFrontage'].median())
+# plt.show()
+
+top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
+sns.set(style='ticks')
+sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
+# plt.show()
+
+# print(train_df['LotFrontage'].median(), train_df['LotFrontage'].mean())
+
