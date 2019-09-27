@@ -94,6 +94,7 @@ train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
 df_id = train_df["Id"]
 
+
 # Quick check for empty vals in  cols
 # Drop cols with more than 50% empty cells
 
@@ -103,12 +104,22 @@ test_df.drop(["Id", "PoolQC", "MiscFeature", "Alley", "Fence", "FireplaceQu"], a
 median_lotFr = train_df['LotFrontage'].median()
 train_df['LotFrontage'].replace(np.nan, median_lotFr, inplace=True)
 # Replace missing values in Garage Year build by 0
+# replace by 0 and NaN MasVnr features
 train_df['GarageYrBlt'].replace(np.nan, 0, inplace=True)
+train_df['MasVnrArea'].replace(np.nan, 0, inplace=True)
+train_df['Electrical'].replace(np.nan, 'SBrkr', inplace=True)
 
 # Replace missing values by none in categorical vars for garage
-for col in ['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond']:
+for col in ['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond', 'MasVnrType']:
     train_df[col].replace(np.nan, 'None', inplace=True)
 
+# Basement, same missing values for each basement related
+# feature, we will assume that basement is not available for those houses
+# Replace by "none" all NaN values
+for col in ['BsmtExposure', 'BsmtFinType2', 'BsmtQual', 'BsmtCond', 'BsmtFinType1']:
+    train_df[col].replace(np.nan, 'None', inplace=True)
+
+# Check for missing vals
 t = missing_zero_values_table(train_df)
 print(t)
 
