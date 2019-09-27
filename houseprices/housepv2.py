@@ -9,7 +9,7 @@ import scipy
 #pre precessing
 from sklearn import preprocessing as prep
 
-
+# Some useful funcs
 def corr_mat(df):
     corr = df.corr()
     ax = sns.heatmap(
@@ -78,7 +78,6 @@ def missing_zero_values_table(df):
     return mz_table
 
 
-# Some useful funcs
 def check_miss_values(df):
     miss_vals = df.isnull()
     for column in miss_vals.columns.values.tolist():
@@ -120,20 +119,20 @@ for col in ['BsmtExposure', 'BsmtFinType2', 'BsmtQual', 'BsmtCond', 'BsmtFinType
     train_df[col].replace(np.nan, 'None', inplace=True)
 
 # Check for missing vals
-t = missing_zero_values_table(train_df)
-print(t)
+# t = missing_zero_values_table(train_df)
+# print(t)
 
+# Correlation matrix
 # corr_mat(train_df)
 
 details = stats(train_df, 'SalePrice')
-# print(details.sort_values(by='corr SalePrice', ascending=False))
+print(details.sort_values(by='corr SalePrice', ascending=False))
 
 
 # print("All cols names :", train_df.columns)
 # print("cols with nan: ", train_df.columns[train_df.isnull().any()])
 # print("number of NaN:", train_df["MSSubClass"].isnull().sum())
 # print("number of NaN values for the column bathrooms :", df['bathrooms'].isnull().sum())
-
 # print(train_df.describe())
 # print(train_df.corr())
 
@@ -141,42 +140,63 @@ details = stats(train_df, 'SalePrice')
 # cols_with_missing_vals = train_df.columns[train_df.isnull().any()]
 # print(cols_with_missing_vals)
 
-# Target variable
 
+# Deal with outliers
+train_df = train_df.drop(train_df[(train_df['GrLivArea'] > 4000) & (train_df['SalePrice'] < 300000)].index)
+
+
+# Perform binning
+
+# Encode categorical data into num.ordinal
+
+# Target val normalization ?
+
+# Feature Engineering ? Create new features if needed
+
+# Target variable
 plt.subplots(figsize=(12, 9))
 sns.distplot(train_df['SalePrice'], fit=scipy.stats.norm)
-# plt.show()
+plt.show()
 
 
-# visualization of some data
-
-fig = plt.figure(figsize=(30, 25))
+# visualization of some data (Features with corr > 0.5)
+fig = plt.figure(figsize=(45, 25))
 sns.set(font_scale=2)
 
 # (Corr= 0.790982) Box plot overallqual/salePrice
-fig1 = fig.add_subplot(231)
+fig1 = fig.add_subplot(331)
 sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
 # Next one
-fig2 = fig.add_subplot(232)
+fig2 = fig.add_subplot(332)
 sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
 
-fig3 = fig.add_subplot(233)
+fig3 = fig.add_subplot(333)
 sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
 
-fig4 = fig.add_subplot(234)
+fig4 = fig.add_subplot(334)
 sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
 
-fig5 = fig.add_subplot(235)
+fig5 = fig.add_subplot(335)
 sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
 
-fig6 = fig.add_subplot(236)
+fig6 = fig.add_subplot(336)
 sns.scatterplot(x='1stFlrSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', '1stFlrSF', 'OverallQual']])
 
-# plt.show()
+fig7 = fig.add_subplot(337)
+sns.boxplot(x='FullBath', y='SalePrice', data=train_df[['SalePrice', 'FullBath']])
 
-top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
-sns.set(style='ticks')
-sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
+fig8 = fig.add_subplot(338)
+sns.boxplot(x='TotRmsAbvGrd', y='SalePrice', data=train_df[['SalePrice', 'TotRmsAbvGrd']])
+
+fig9 = fig.add_subplot(339)
+sns.scatterplot(x='YearBuilt', y='SalePrice', data=train_df[['SalePrice', 'YearBuilt']])
+
+
+plt.show()
+
+# top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
+# sns.set(style='ticks')
+# sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
 # plt.show()
 
 # print(train_df['LotFrontage'].median(), train_df['LotFrontage'].mean())
