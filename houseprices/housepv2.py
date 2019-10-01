@@ -145,10 +145,8 @@ for col in ['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond', 'MasVnrTyp
     test_df[col].replace(np.nan, 'None', inplace=True)
 
 # Check for missing vals
-tr =  missing_zero_values_table(train_df)
-t = missing_zero_values_table(test_df)
-print(tr)
-print(t)
+# tr =  missing_zero_values_table(train_df)
+# t = missing_zero_values_table(test_df)
 
 # Correlation matrix
 # corr_mat(train_df)
@@ -176,6 +174,15 @@ train_df = train_df.drop(train_df[(train_df['GrLivArea'] > 4000) & (train_df['Sa
 # Perform binning
 
 # Encode categorical data into num.ordinal
+cat_cols = train_df.select_dtypes(include='object').columns.values
+print(cat_cols)
+
+enc = prep.OrdinalEncoder()
+enc.fit(train_df[cat_cols])
+train_df[cat_cols] = enc.transform(train_df[cat_cols])
+test_df[cat_cols] = enc.transform(test_df[cat_cols])
+print(train_df[cat_cols].head(10))
+
 
 # Target val normalization ?
 
@@ -184,7 +191,7 @@ train_df = train_df.drop(train_df[(train_df['GrLivArea'] > 4000) & (train_df['Sa
 # Target variable
 plt.subplots(figsize=(12, 9))
 sns.distplot(train_df['SalePrice'], fit=scipy.stats.norm)
-# plt.show()
+plt.show()
 
 
 # visualization of some data (Features with corr > 0.5)
@@ -192,40 +199,39 @@ fig = plt.figure(figsize=(45, 25))
 sns.set(font_scale=2)
 
 # (Corr= 0.790982) Box plot overallqual/salePrice
-# fig1 = fig.add_subplot(331)
-# sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
+fig1 = fig.add_subplot(331)
+sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
+
 # # Next one
-# fig2 = fig.add_subplot(332)
-# sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
-#
-# fig3 = fig.add_subplot(333)
-# sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
-#
-# fig4 = fig.add_subplot(334)
-# sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
-#
-# fig5 = fig.add_subplot(335)
-# sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
-#
-# fig6 = fig.add_subplot(336)
-# sns.scatterplot(x='1stFlrSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', '1stFlrSF', 'OverallQual']])
-#
-# fig7 = fig.add_subplot(337)
-# sns.boxplot(x='FullBath', y='SalePrice', data=train_df[['SalePrice', 'FullBath']])
-#
-# fig8 = fig.add_subplot(338)
-# sns.boxplot(x='TotRmsAbvGrd', y='SalePrice', data=train_df[['SalePrice', 'TotRmsAbvGrd']])
-#
-# fig9 = fig.add_subplot(339)
-# sns.scatterplot(x='YearBuilt', y='SalePrice', data=train_df[['SalePrice', 'YearBuilt']])
-#
-#
-# plt.show()
+fig2 = fig.add_subplot(332)
+sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
 
-# top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
-# sns.set(style='ticks')
-# sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
-# plt.show()
+fig3 = fig.add_subplot(333)
+sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
 
-# print(train_df['LotFrontage'].median(), train_df['LotFrontage'].mean())
+fig4 = fig.add_subplot(334)
+sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
+
+fig5 = fig.add_subplot(335)
+sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
+
+fig6 = fig.add_subplot(336)
+sns.scatterplot(x='1stFlrSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', '1stFlrSF', 'OverallQual']])
+
+fig7 = fig.add_subplot(337)
+sns.boxplot(x='FullBath', y='SalePrice', data=train_df[['SalePrice', 'FullBath']])
+
+fig8 = fig.add_subplot(338)
+sns.boxplot(x='TotRmsAbvGrd', y='SalePrice', data=train_df[['SalePrice', 'TotRmsAbvGrd']])
+
+fig9 = fig.add_subplot(339)
+sns.scatterplot(x='YearBuilt', y='SalePrice', data=train_df[['SalePrice', 'YearBuilt']])
+
+
+plt.show()
+
+top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
+sns.set(style='ticks')
+sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
+plt.show()
 
