@@ -78,6 +78,13 @@ def missing_zero_values_table(df):
     return mz_table
 
 
+def normalize(x):
+    f_mean = x.mean()
+    f_sigma = x.std()
+    x_norm = (x - f_mean) / f_sigma
+    return x_norm
+
+
 def check_miss_values(df):
     miss_vals = df.isnull()
     for column in miss_vals.columns.values.tolist():
@@ -181,8 +188,6 @@ enc = prep.OrdinalEncoder()
 enc.fit(train_df[cat_cols])
 train_df[cat_cols] = enc.transform(train_df[cat_cols])
 test_df[cat_cols] = enc.transform(test_df[cat_cols])
-print(train_df[cat_cols].head(10))
-
 
 # Target val normalization ?
 
