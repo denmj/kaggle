@@ -11,9 +11,10 @@ from sklearn import preprocessing as prep
 
 # ml models
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
 from sklearn import svm
+
 
 
 # Some useful funcs
@@ -204,7 +205,10 @@ X_test = np.asarray(test_df)
 X_train = prep.StandardScaler().fit(X_train).transform(X_train)
 X_test = prep.StandardScaler().fit(X_test).transform(X_test)
 
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=4)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=1)
+
+print(X_train.shape, y_train.shape)
+print(X_val.shape, y_val.shape)
 
 
 
@@ -254,4 +258,24 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 # sns.set(style='ticks')
 # sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
 # plt.show()
+
+# Models
+
+# Trying different models
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+acc_lr_train = round(lr.score(X_train, y_train) * 100, 2)
+acc_lr_val = round(lr.score(X_val, y_val) * 100, 2)
+
+
+rr = Ridge(alpha=1)
+rr.fit(X_train, y_train)
+acc_rr_train = round(rr.score(X_train, y_train) * 100, 2)
+acc_rr_val = round(rr.score(X_val, y_val) * 100, 2)
+
+print("Linreg for train set: ", acc_lr_train)
+print("LinReg for val set: ", acc_lr_val)
+
+print("Ridge for train set: ", acc_rr_train)
+print("Ridge for val set: ", acc_rr_val)
 
