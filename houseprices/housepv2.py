@@ -9,6 +9,13 @@ import scipy
 #pre precessing
 from sklearn import preprocessing as prep
 
+# ml models
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import svm
+
+
 # Some useful funcs
 def corr_mat(df):
     corr = df.corr()
@@ -182,61 +189,69 @@ train_df = train_df.drop(train_df[(train_df['GrLivArea'] > 4000) & (train_df['Sa
 
 # Encode categorical data into num.ordinal
 cat_cols = train_df.select_dtypes(include='object').columns.values
-print(cat_cols)
 
 enc = prep.OrdinalEncoder()
 enc.fit(train_df[cat_cols])
 train_df[cat_cols] = enc.transform(train_df[cat_cols])
 test_df[cat_cols] = enc.transform(test_df[cat_cols])
 
-# Target val normalization ?
+# Scaling
 
-# Feature Engineering ? Create new features if needed
+y_train = np.asarray(train_df["SalePrice"])
+X_train = np.asarray(train_df.drop("SalePrice", axis=1))
+X_test = np.asarray(test_df)
+
+X_train = prep.StandardScaler().fit(X_train).transform(X_train)
+X_test = prep.StandardScaler().fit(X_test).transform(X_test)
+
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=4)
+
+
 
 # Target variable
-plt.subplots(figsize=(12, 9))
-sns.distplot(train_df['SalePrice'], fit=scipy.stats.norm)
-plt.show()
+# plt.subplots(figsize=(12, 9))
+# sns.distplot(train_df['SalePrice'], fit=scipy.stats.norm)
+# plt.show()
 
 
 # visualization of some data (Features with corr > 0.5)
-fig = plt.figure(figsize=(45, 25))
-sns.set(font_scale=2)
+# fig = plt.figure(figsize=(45, 25))
+# sns.set(font_scale=2)
 
 # (Corr= 0.790982) Box plot overallqual/salePrice
-fig1 = fig.add_subplot(331)
-sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
+# fig1 = fig.add_subplot(331)
+# sns.boxplot(x='OverallQual', y='SalePrice',  data=train_df[['SalePrice', 'OverallQual']])
 
 # # Next one
-fig2 = fig.add_subplot(332)
-sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
-
-fig3 = fig.add_subplot(333)
-sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
-
-fig4 = fig.add_subplot(334)
-sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
-
-fig5 = fig.add_subplot(335)
-sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
-
-fig6 = fig.add_subplot(336)
-sns.scatterplot(x='1stFlrSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', '1stFlrSF', 'OverallQual']])
-
-fig7 = fig.add_subplot(337)
-sns.boxplot(x='FullBath', y='SalePrice', data=train_df[['SalePrice', 'FullBath']])
-
-fig8 = fig.add_subplot(338)
-sns.boxplot(x='TotRmsAbvGrd', y='SalePrice', data=train_df[['SalePrice', 'TotRmsAbvGrd']])
-
-fig9 = fig.add_subplot(339)
-sns.scatterplot(x='YearBuilt', y='SalePrice', data=train_df[['SalePrice', 'YearBuilt']])
-
-
-plt.show()
-
-top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
-sns.set(style='ticks')
-sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
-plt.show()
+# fig2 = fig.add_subplot(332)
+# sns.scatterplot(x='GrLivArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GrLivArea', 'OverallQual']])
+#
+# fig3 = fig.add_subplot(333)
+# sns.scatterplot(x='TotalBsmtSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'TotalBsmtSF', 'OverallQual']])
+#
+# fig4 = fig.add_subplot(334)
+# sns.boxplot(x='GarageCars', y='SalePrice',  data=train_df[['SalePrice', 'GarageCars', 'OverallQual']])
+#
+# fig5 = fig.add_subplot(335)
+# sns.scatterplot(x='GarageArea', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', 'GarageArea', 'OverallQual']])
+#
+# fig6 = fig.add_subplot(336)
+# sns.scatterplot(x='1stFlrSF', y='SalePrice', hue='OverallQual', data=train_df[['SalePrice', '1stFlrSF', 'OverallQual']])
+#
+# fig7 = fig.add_subplot(337)
+# sns.boxplot(x='FullBath', y='SalePrice', data=train_df[['SalePrice', 'FullBath']])
+#
+# fig8 = fig.add_subplot(338)
+# sns.boxplot(x='TotRmsAbvGrd', y='SalePrice', data=train_df[['SalePrice', 'TotRmsAbvGrd']])
+#
+# fig9 = fig.add_subplot(339)
+# sns.scatterplot(x='YearBuilt', y='SalePrice', data=train_df[['SalePrice', 'YearBuilt']])
+#
+#
+# plt.show()
+#
+# top_corr_features_col = ['SalePrice', 'OverallQual', 'GrLivArea', 'TotalBsmtSF', 'GarageCars', 'GarageArea', '1stFlrSF']
+# sns.set(style='ticks')
+# sns.pairplot(train_df[top_corr_features_col], height=3, kind='reg')
+# plt.show()
 
