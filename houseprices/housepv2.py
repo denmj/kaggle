@@ -13,7 +13,15 @@ from sklearn import preprocessing as prep
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
-from sklearn import svm
+from sklearn.linear_model import Lasso
+from xgboost import XGBRegressor
+
+
+# Evaluation
+from sklearn.metrics import mean_squared_log_error
+
+
+
 
 
 
@@ -107,7 +115,7 @@ pd.set_option('display.width', 150)
 train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
 df_id = train_df["Id"]
-
+pass_id_test = test_df["Id"]
 
 # Quick check for empty vals in  cols
 # Drop cols with more than 50% empty cells
@@ -209,6 +217,7 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 
 print(X_train.shape, y_train.shape)
 print(X_val.shape, y_val.shape)
+print(X_test.shape)
 
 
 
@@ -262,20 +271,28 @@ print(X_val.shape, y_val.shape)
 # Models
 
 # Trying different models
-lr = LinearRegression()
-lr.fit(X_train, y_train)
-acc_lr_train = round(lr.score(X_train, y_train) * 100, 2)
-acc_lr_val = round(lr.score(X_val, y_val) * 100, 2)
 
+xbreg = XGBRegressor()
+xb_model = xbreg.fit(X_train, y_train)
+acc_xb_train = round(xb_model.score(X_train, y_train) * 100, 2)
+acc_xb_val = round(xb_model.score(X_val, y_val) * 100, 2)
+pred_xb_tr = xb_model.predict(X_train)
+pred_xb_val = xb_model.predict(X_val)
 
-rr = Ridge(alpha=1)
-rr.fit(X_train, y_train)
-acc_rr_train = round(rr.score(X_train, y_train) * 100, 2)
-acc_rr_val = round(rr.score(X_val, y_val) * 100, 2)
+rmlse_train_xb = np.sqrt(mean_squared_log_error(y_train, pred_xb_tr))
+rmlse_val_xb = np.sqrt(mean_squared_log_error(y_val, pred_xb_val))
 
-print("Linreg for train set: ", acc_lr_train)
-print("LinReg for val set: ", acc_lr_val)
+print(rmlse_train_xb, rmlse_val_xb)
+print("XB for train set: ", acc_xb_train)
+print("XB for val set: ", acc_xb_val)
 
-print("Ridge for train set: ", acc_rr_train)
-print("Ridge for val set: ", acc_rr_val)
+# Best model
+test_Y = xb_model.predict(X_test)
+print(test_Y)
+submission = pd.DataFrame({
+        "Id": pass_id_test,
+        "SalePrice": test_Y
+    })
+
+submission.to_csv('submission_3_0.csv', index=False)
 
