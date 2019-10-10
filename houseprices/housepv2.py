@@ -19,6 +19,8 @@ from xgboost import XGBRegressor
 
 # Evaluation
 from sklearn.metrics import mean_squared_log_error
+from sklearn.model_selection import KFold, cross_val_score
+
 
 
 
@@ -193,33 +195,33 @@ for col in ['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond', 'MasVnrTyp
 # Deal with outliers
 train_df = train_df.drop(train_df[(train_df['GrLivArea'] > 4000) & (train_df['SalePrice'] < 300000)].index)
 
+# Visualize missing values
+# sns.heatmap(train_df.isnull(), cbar=False)
+# plt.show()
+# sns.heatmap(test_df.isnull(), cbar=False)
+# plt.show()
 
 # Perform binning
 
 # Encode categorical data into num.ordinal
 cat_cols = train_df.select_dtypes(include='object').columns.values
-
 enc = prep.OrdinalEncoder()
 enc.fit(train_df[cat_cols])
 train_df[cat_cols] = enc.transform(train_df[cat_cols])
 test_df[cat_cols] = enc.transform(test_df[cat_cols])
 
+
 # Scaling
+# train_df['SalePrice'] = np.log1p(train_df['SalePrice'])
+
 
 y_train = np.asarray(train_df["SalePrice"])
 X_train = np.asarray(train_df.drop("SalePrice", axis=1))
 X_test = np.asarray(test_df)
 
-X_train = prep.StandardScaler().fit(X_train).transform(X_train)
-X_test = prep.StandardScaler().fit(X_test).transform(X_test)
-
+X_train = prep.RobustScaler().fit(X_train).transform(X_train)
+X_test = prep.RobustScaler().fit(X_test).transform(X_test)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.3, random_state=1)
-
-print(X_train.shape, y_train.shape)
-print(X_val.shape, y_val.shape)
-print(X_test.shape)
-
-
 
 # Target variable
 # plt.subplots(figsize=(12, 9))
@@ -282,13 +284,39 @@ pred_xb_val = xb_model.predict(X_val)
 rmlse_train_xb = np.sqrt(mean_squared_log_error(y_train, pred_xb_tr))
 rmlse_val_xb = np.sqrt(mean_squared_log_error(y_val, pred_xb_val))
 
+
+lr = LinearRegression()
+lr_model = lr.fit(X_train, y_train)
+acc_lr_train = round(lr_model.score(X_train, y_train) * 100, 2)
+acc_lr_val = round(lr_model.score(X_val, y_val) * 100, 2)
+pred_lr_tr = lr_model.predict(X_train)
+pred_lr_val = lr_model.predict(X_val)
+pred_lr_test = lr_model.predict(X_test)
+print(pred_lr_tr)
+print(pred_lr_val)
+print(pred_lr_test)
+
+rmlse_train_lr = np.sqrt(mean_squared_log_error(y_train, pred_lr_tr))
+rmlse_val_lr = np.sqrt(mean_squared_log_error(y_val, pred_lr_val))
+
+
+
 print(rmlse_train_xb, rmlse_val_xb)
 print("XB for train set: ", acc_xb_train)
 print("XB for val set: ", acc_xb_val)
 
+
+
+print(rmlse_train_lr, rmlse_val_lr)
+print("LR for train set: ", acc_lr_train)
+print("LR for val set: ", acc_lr_val)
+
 # Best model
+test_y = lr_model.predict(X_test)
 test_Y = xb_model.predict(X_test)
+print(test_y)
 print(test_Y)
+
 submission = pd.DataFrame({
         "Id": pass_id_test,
         "SalePrice": test_Y
