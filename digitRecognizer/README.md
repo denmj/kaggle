@@ -1,6 +1,6 @@
 # Kaggle
 
-## Task 3. Titanic Data Science Solutions.
+## Task 3. Digit recognizer
 
 ### Competition Description
 
