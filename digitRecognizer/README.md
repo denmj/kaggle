@@ -1,6 +1,6 @@
 # Kaggle
 
-## Task 3. Titanic Data Science Solutions.
+## Task 3. Digit recognizer
 
 ### Competition Description
 
@@ -13,3 +13,10 @@ In this competition, your goal is to correctly identify digits from a dataset of
 Computer vision fundamentals including simple neural networks
 
 Classification methods such as SVM and K-nearest neighbors
+
+### Getting data
+To download data execute the following command from subfolder houseprices/
+```
+mkdir data && cd data/ && kaggle competitions download -c digit-recognizer
+```
+
