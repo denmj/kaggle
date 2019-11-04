@@ -75,7 +75,7 @@ X_tr, X_val, y_tr, y_val = train_test_split(X_train, y_train, test_size=0.2, ran
 print("Splitting data done in %0.3fs" % (time() - t0))
 
 # Using portion of data (for quicker computations)
-i = 15000
+i = 1000
 print(train_df.shape)
 
 
@@ -103,24 +103,44 @@ print("Shape after PCA for Test: ",val_pca.shape)
 svm_params = {'C': [1e3, 5e3, 1e4, 5e4, 1e5],
               'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.1], }
 
-t0 = time()
-
-
 # clf = GridSearchCV(svm.SVC(kernel='rbf', class_weight='balanced'),
 #                    svm_params, cv=5, iid=False)
 
-clf = svm.SVC(C=1000, gamma=0.001, random_state=None)
 
-clf.fit(train_pca, y_tr)
-print("Fitting done in %0.3fs" % (time() - t0))
+# number of neighbors
+knn_params = {'n_neighbors': [3, 5, 11, 19],
+              'weights': ['uniform', 'distance'],
+              'metric': ['euclidean', 'manhattan']
+              }
+knnclf = GridSearchCV(KNeighborsClassifier(), knn_params, verbose=1, cv=3, n_jobs=-1)
 
+# KNN
 t0 = time()
-score=clf.score(val_pca, y_val)
-# print("Best params found by grid search:")
-# print(clf.best_estimator_)
-# print("Best score found by grid search:")
-# print(clf.best_score_)
-print("Accuracy : ", score)
+print("Fitting KNN...")
+# knnclf = KNeighborsClassifier()
+knnclf.fit(train_pca, y_tr)
+print("Fitting KNN done in %0.3fs" % (time() - t0))
+
+# SVM
+t0 = time()
+print("Fitting SVM...")
+clf = svm.SVC(C=1000, gamma=0.001, random_state=None)
+clf.fit(train_pca, y_tr)
+print("Fitting SVM done in %0.3fs" % (time() - t0))
+t0 = time()
+score_svm=clf.score(val_pca, y_val)
+score_knn = knnclf.score(val_pca, y_val)
+
+print("Best estimator found by grid search:")
+print(knnclf.best_estimator_)
+print("Best score found by grid search:")
+print(knnclf.best_score_)
+print("Best params found by grid search:")
+print(knnclf.best_params_)
+
+print("SVM accuracy : ", score_svm)
+print("KNN accuracy : ", score_knn)
+
 print("Accuracy calculated in %0.3fs" % (time() - t0))
 
 print('Done training')
