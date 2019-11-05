@@ -3,7 +3,6 @@ from time import time
 # data analysis and wrangling
 import pandas as pd
 import numpy as np
-from PIL import Image
 
 # Standard scientific Python imports
 import matplotlib.pyplot as plt
