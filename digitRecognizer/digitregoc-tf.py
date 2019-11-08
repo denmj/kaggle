@@ -1,39 +1,75 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+
 from time import time
 
 # data analysis and wrangling
 import pandas as pd
-import numpy as np
-
-# Install TensorFlow
-import tensorflow as tf
+# import tensorflow as tf
+from tensorflow.python import keras
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers import Dense, Flatten, Conv2D, Dropout
+from sklearn.model_selection import train_test_split
 
 t0 = time()
 train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
 print("Loading data done in %0.3fs" % (time() - t0))
 
-X_train_k = (train_df.iloc[:,1:].values).astype('float32') # all pixel values
-y_train_k = train_df.iloc[:,0].values.astype('int32') # only labels i.e targets digits
-X_test_k = test_df.values.astype('float32')
+img_rows, img_cols = 28, 28
+num_classes = 10
 
-X_train_k = X_train_k.reshape(-1, 28, 28, 1)
-X_test_k = X_test_k.reshape(-1, 28, 28, 1)
 
-# tf
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+def data_prep(raw):
+    out_y = keras.utils.to_categorical(raw.label, num_classes)
 
-model = tf.keras.models.Sequential([
-  tf.keras.layers.Flatten(input_shape=(28, 28, 1)),
-  tf.keras.layers.Dense(128, activation='relu'),
-  tf.keras.layers.Dropout(0.2),
-  tf.keras.layers.Dense(10, activation='softmax')
-])
+    num_images = raw.shape[0]
+    x_as_array = raw.values[:,1:]
+    x_shaped_array = x_as_array.reshape(num_images, img_rows, img_cols, 1)
+    out_x = x_shaped_array / 255
+    return out_x, out_y
 
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
+
+raw_data = pd.read_csv('data/train.csv')
+x, y = data_prep(raw_data)
+
+model = Sequential()
+model.add(Conv2D(20, kernel_size=(3, 3),
+                 activation='relu',
+                 input_shape=(img_rows, img_cols, 1)))
+model.add(Conv2D(20, kernel_size=(3, 3), activation='relu'))
+model.add(Flatten())
+model.add(Dense(128, activation='relu'))
+model.add(Dense(num_classes, activation='softmax'))
+
+model.compile(loss=keras.losses.categorical_crossentropy,
+              optimizer='adam',
               metrics=['accuracy'])
+model.fit(x, y,
+          batch_size=128,
+          epochs=2,
+          validation_split=0.2)
 
-model.fit(X_train_k, y_train_k, epochs=25)
 
+# X_train_k = (train_df.iloc[:,1:].values).astype('float32') # all pixel values
+# y_train_k = train_df.iloc[:,0].values.astype('int32') # only labels i.e targets digits
+# X_test_k = test_df.values.astype('float32')
+#
+# X_train_k = X_train_k.reshape(-1, 28, 28, 1)
+# X_test_k = X_test_k.reshape(-1, 28, 28, 1)
+#
+# # tf
+# (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+#
+# model = tf.keras.models.Sequential([
+#   tf.keras.layers.Flatten(input_shape=(28, 28, 1)),
+#   tf.keras.layers.Dense(128, activation='relu'),
+#   tf.keras.layers.Dropout(0.2),
+#   tf.keras.layers.Dense(10, activation='softmax')
+# ])
+#
+# model.compile(optimizer='adam',
+#               loss='sparse_categorical_crossentropy',
+#               metrics=['accuracy'])
+#
+# model.fit(X_train_k, y_train_k, epochs=25)
 # model.evaluate(x_test,  y_test, verbose=2)
