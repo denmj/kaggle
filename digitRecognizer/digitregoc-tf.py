@@ -16,21 +16,6 @@ from tensorflow.python.keras.layers import Dense, Flatten, Conv2D, Dropout
 from sklearn.model_selection import train_test_split
 
 
-def loss_epoch_plot(model_hist):
-    loss_values = history_dict['loss']
-    val_loss_values = history_dict['val_loss']
-    epochs = range(1, len(loss_values) + 1)
-
-    # "bo" is for "blue dot"
-    plt.plot(epochs, loss_values, 'bo')
-    # b+ is for "blue crosses"
-    plt.plot(epochs, val_loss_values, 'b+')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-
-    plt.show()
-
-
 t0 = time()
 train_df = pd.read_csv('data/train.csv')
 test_df = pd.read_csv('data/test.csv')
@@ -38,6 +23,11 @@ print("Loading data done in %0.3fs" % (time() - t0))
 
 img_rows, img_cols = 28, 28
 num_classes = 10
+
+#Train data
+X_test = test_df.values.astype('float32')
+X_test = X_test.reshape(X_test.shape[0], 28, 28,1)
+
 
 
 def data_prep(raw):
@@ -70,6 +60,8 @@ model.fit(x, y,
           epochs=3,
           validation_split=0.2)
 
+predictions = model.predict_classes(X_test, verbose=0)
 
-history_dict = model.history
-loss_epoch_plot(history_dict)
+submissions=pd.DataFrame({"ImageId": list(range(1,len(predictions)+1)),
+                         "Label": predictions})
+submissions.to_csv("cnn_tf.csv", index=False, header=True)
