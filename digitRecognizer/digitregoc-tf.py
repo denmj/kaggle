@@ -1,14 +1,35 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from time import time
+# plot and graph
+import matplotlib.pyplot as plt
 
 # data analysis and wrangling
 import pandas as pd
+
+# from keras.models import Sequential
+
 # import tensorflow as tf
 from tensorflow.python import keras
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Flatten, Conv2D, Dropout
 from sklearn.model_selection import train_test_split
+
+
+def loss_epoch_plot(model_hist):
+    loss_values = history_dict['loss']
+    val_loss_values = history_dict['val_loss']
+    epochs = range(1, len(loss_values) + 1)
+
+    # "bo" is for "blue dot"
+    plt.plot(epochs, loss_values, 'bo')
+    # b+ is for "blue crosses"
+    plt.plot(epochs, val_loss_values, 'b+')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+
+    plt.show()
+
 
 t0 = time()
 train_df = pd.read_csv('data/train.csv')
@@ -45,31 +66,10 @@ model.compile(loss=keras.losses.categorical_crossentropy,
               optimizer='adam',
               metrics=['accuracy'])
 model.fit(x, y,
-          batch_size=128,
-          epochs=2,
+          batch_size=64,
+          epochs=3,
           validation_split=0.2)
 
 
-# X_train_k = (train_df.iloc[:,1:].values).astype('float32') # all pixel values
-# y_train_k = train_df.iloc[:,0].values.astype('int32') # only labels i.e targets digits
-# X_test_k = test_df.values.astype('float32')
-#
-# X_train_k = X_train_k.reshape(-1, 28, 28, 1)
-# X_test_k = X_test_k.reshape(-1, 28, 28, 1)
-#
-# # tf
-# (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-#
-# model = tf.keras.models.Sequential([
-#   tf.keras.layers.Flatten(input_shape=(28, 28, 1)),
-#   tf.keras.layers.Dense(128, activation='relu'),
-#   tf.keras.layers.Dropout(0.2),
-#   tf.keras.layers.Dense(10, activation='softmax')
-# ])
-#
-# model.compile(optimizer='adam',
-#               loss='sparse_categorical_crossentropy',
-#               metrics=['accuracy'])
-#
-# model.fit(X_train_k, y_train_k, epochs=25)
-# model.evaluate(x_test,  y_test, verbose=2)
+history_dict = model.history
+loss_epoch_plot(history_dict)
