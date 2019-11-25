@@ -9,7 +9,7 @@ import pandas as pd
 
 # from keras.models import Sequential
 
-# import tensorflow as tf
+import tensorflow as tf
 from tensorflow.python import keras
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers import Dense, Flatten, Conv2D, Dropout
@@ -24,10 +24,9 @@ print("Loading data done in %0.3fs" % (time() - t0))
 img_rows, img_cols = 28, 28
 num_classes = 10
 
-#Train data
+# Train data
 X_test = test_df.values.astype('float32')
 X_test = X_test.reshape(X_test.shape[0], 28, 28,1)
-
 
 
 def data_prep(raw):
@@ -60,8 +59,8 @@ model.fit(x, y,
           epochs=3,
           validation_split=0.2)
 
-predictions = model.predict_classes(X_test, verbose=0)
-
-submissions=pd.DataFrame({"ImageId": list(range(1,len(predictions)+1)),
-                         "Label": predictions})
-submissions.to_csv("cnn_tf.csv", index=False, header=True)
+# predictions = model.predict_classes(X_test, verbose=0)
+#
+# submissions=pd.DataFrame({"ImageId": list(range(1,len(predictions)+1)),
+#                          "Label": predictions})
+# submissions.to_csv("cnn_tf.csv", index=False, header=True)
