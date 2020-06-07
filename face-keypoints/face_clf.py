@@ -5,9 +5,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import csv
 
+
+
 # ml models
 from sklearn.model_selection import train_test_split
 
+import tensorflow as tf
 from tensorflow.python import keras
 from tensorflow.python.keras import layers
 
@@ -68,7 +71,75 @@ test_df['Image'] = test_df['Image'].apply(lambda x: np.fromstring(x, dtype=int, 
 test_X = np.asarray([test_df['Image']], dtype=np.uint8).reshape(test_df.shape[0], 96, 96, 1)
 train_X = train_X.apply(lambda x: np.fromstring(x, dtype=int, sep=' ').reshape((96,96)))
 train_X = np.asarray([train_X], dtype=np.uint8).reshape(train_X.shape[0], 96, 96, 1)
-train_Y =  train_Y.to_numpy()
+train_Y = train_Y.to_numpy()
 
 
-X_train, X_val, y_train, y_val = train_test_split(train_X, train_Y, test_size=0.3, random_state=42)
+print(train_X.shape, train_Y.shape)
+
+model = tf.keras.Sequential()
+
+model.add(tf.keras.layers.Convolution2D(32, (3, 3), padding='same', use_bias=False, input_shape=(96, 96, 1)))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+
+model.add(tf.keras.layers.Convolution2D(32, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+
+model.add(tf.keras.layers.Convolution2D(64, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+
+model.add(tf.keras.layers.Convolution2D(64, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+
+model.add(tf.keras.layers.Convolution2D(96, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+
+model.add(tf.keras.layers.Convolution2D(96, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+
+model.add(tf.keras.layers.Convolution2D(128, (3, 3), padding='same', use_bias=False))
+# model.add(BatchNormalization())
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+#
+model.add(tf.keras.layers.Convolution2D(128, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+#
+model.add(tf.keras.layers.Convolution2D(256, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+
+model.add(tf.keras.layers.Convolution2D(256, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+
+model.add(tf.keras.layers.Convolution2D(512, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+
+model.add(tf.keras.layers.Convolution2D(512, (3, 3), padding='same', use_bias=False))
+model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
+model.add(tf.keras.layers.BatchNormalization())
+
+model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.Dense(512, activation='relu'))
+model.add(tf.keras.layers.Dropout(0.2))
+model.add(tf.keras.layers.Dense(30))
+model.summary()
+
+model.compile(optimizer='adam',
+              loss='mean_squared_error',
+              metrics=['mae'])
+
+model.fit(train_X, train_Y, epochs=50, batch_size=256, validation_split=0.2)
