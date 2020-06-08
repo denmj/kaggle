@@ -77,7 +77,6 @@ train_Y = train_Y.to_numpy()
 print(train_X.shape, train_Y.shape)
 
 model = tf.keras.Sequential()
-
 model.add(tf.keras.layers.Convolution2D(32, (3, 3), padding='same', use_bias=False, input_shape=(96, 96, 1)))
 model.add(tf.keras.layers.LeakyReLU(alpha=0.1))
 model.add(tf.keras.layers.BatchNormalization())
@@ -142,4 +141,8 @@ model.compile(optimizer='adam',
               loss='mean_squared_error',
               metrics=['mae'])
 
-model.fit(train_X, train_Y, epochs=50, batch_size=256, validation_split=0.2)
+hist = model.fit(train_X, train_Y, epochs=50, batch_size=256, validation_split=0.2)
+
+model.save('C:/Users/denis/Desktop/ML/K/kaggle/face-keypoints')
+
+
