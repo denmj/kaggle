@@ -51,11 +51,11 @@ def missing_values(df):
     print(miss_values_table)
 
 
-train_df = pd.read_csv('data/training.csv')
-test_df = pd.read_csv('data/test.csv')
+train_df = pd.read_csv('C:/Users/denis/Desktop/ML/kaggle_data/face/training.csv')
+test_df = pd.read_csv('C:/Users/denis/Desktop/ML/kaggle_data/face/test.csv')
 
 cols = train_df.columns.values
-ids_df = pd.read_csv('data/IdLookupTable.csv')
+ids_df = pd.read_csv('C:/Users/denis/Desktop/ML/kaggle_data/face/IdLookupTable.csv')
 
 # Display images
 # display_pcs(train_df)
