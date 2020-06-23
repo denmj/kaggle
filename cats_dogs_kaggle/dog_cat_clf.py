@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import os
 from sklearn.model_selection import train_test_split
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 # Pre processing
 
@@ -13,6 +15,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, load_img
 # CONSTANTS
 TRAIN_IMAGE_PATH = "C:/Users/denis/Desktop/ML/kaggle_data/dogs-vs-cats/train"
+TEST_IMAGE_PATH = "C:/Users/denis/Desktop/ML/kaggle_data/dogs-vs-cats/test1"
 IMAGE_SIZE = (180, 180)
 BATCH_SIZE = 16
 NUM_CLASSES = 2
@@ -139,18 +142,61 @@ def make_model(input_shape, num_classes):
     return keras.Model(inputs, outputs)
 
 
-model = make_model(input_shape=IMAGE_SIZE+CHANNELS, num_classes=2)
+# model = make_model(input_shape=IMAGE_SIZE+CHANNELS, num_classes=2)
+#
+# callbacks = [
+#     keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),
+# ]
+# model.compile(
+#     optimizer=keras.optimizers.Adam(1e-3),
+#     loss="binary_crossentropy",
+#     metrics=["accuracy"],
+# )
+# model.fit_generator(
+#     train_generator, epochs=EPOCHS, callbacks=callbacks, validation_data=val_generator,
+# )
+#
+# model.save("Xeption_catdog")
 
-callbacks = [
-    keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),
-]
-model.compile(
-    optimizer=keras.optimizers.Adam(1e-3),
-    loss="binary_crossentropy",
-    metrics=["accuracy"],
-)
-model.fit_generator(
-    train_generator, epochs=EPOCHS, callbacks=callbacks, validation_data=val_generator,
+
+loaded_model = keras.models.load_model('C:/Users/denis/Desktop/ML/K/kaggle/cats_dogs_kaggle/Xeption_catdog')
+
+Y_val = val['categories']
+loss, accuracy = loaded_model.evaluate_generator(val_generator)
+
+print("Test: accuracy = %f  ;  loss = %f " % (accuracy, loss))
+
+test_filenames = os.listdir(TEST_IMAGE_PATH)
+test_df = pd.DataFrame({
+    'filename': test_filenames
+})
+nb_samples = test_df.shape[0]
+test_gen = ImageDataGenerator(rescale=1./255)
+test_generator = test_gen.flow_from_dataframe(
+    test_df,
+    TEST_IMAGE_PATH,
+    x_col='filename',
+    y_col=None,
+    class_mode=None,
+    batch_size=BATCH_SIZE,
+    target_size=IMAGE_SIZE,
+    shuffle=False
 )
 
-model.save("Xeption_catdog")
+predict = loaded_model.predict(test_generator, steps=np.ceil(nb_samples/BATCH_SIZE))
+threshold = 0.5
+test_df['category'] = np.where(predict > threshold, 1, 0)
+
+
+sample_test = test_df.sample(n=9).reset_index()
+sample_test.head()
+plt.figure(figsize=(12, 12))
+for index, row in sample_test.iterrows():
+    filename = row['filename']
+    category = row['category']
+    img = load_img("C:/Users/denis/Desktop/ML/kaggle_data/dogs-vs-cats/test1/"+filename, target_size=(256, 256))
+    plt.subplot(3, 3, index+1)
+    plt.imshow(img)
+    plt.xlabel(filename + '(' + "{}".format(category) + ')')
+plt.tight_layout()
+plt.show()
