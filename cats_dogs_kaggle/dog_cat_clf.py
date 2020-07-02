@@ -93,6 +93,7 @@ val_generator = val_datagen.flow_from_dataframe(val, TRAIN_IMAGE_PATH, x_col='fi
 # plt.show()
 
 
+# Xeption mini
 def make_model(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
 
